@@ -1,0 +1,42 @@
+<!-- ==========================================================
+    NAVBAR
+
+    Shared Component
+
+    TODO:
+    - Display SkillSwap logo
+    - Display page title
+    - Display user avatar
+    - Notification icon (optional)
+========================================================== -->
+
+<nav class="navbar navbar-expand-sm navbar-dark shadow-sm">
+    <div class="container-fluid ">
+
+        <a class="navbar-brand d-flex align-items-center" href="/">
+            <img src="/images/logo.png" alt="Logo" style="height:50px; width:50px;" class="rounded-pill ms-2 me-3">
+            <span class=""fw-bold> SKILLSWAP </span>  
+        </a>    
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse justify-content-end" id="collapsibleNavbar">
+            <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link p-3" href="/">Home</a> 
+    
+            <li class="nav-item dropdown">
+                <a class="nav-link p-3 dropdown-toggle" href="/skills" role="button" data-bs-toggle="dropdown">Skills</a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/skills/add">Add Skill</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link p-3" href="/matches">Matches</a>   
+            </ul>
+        </div>
+    </div>
+</nav>
+

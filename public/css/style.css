@@ -1,0 +1,38 @@
+/* ==========================
+   Navbar Custom Styles
+   ========================== */
+
+.navbar {
+  background-color: #1a1a1a; /* dark background */
+  padding: 0.5rem 1rem;
+}
+
+.navbar-brand span {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.navbar-nav .nav-link {
+  color: #cccccc; /* lighter gray for inactive links */
+  margin-right: 15px;
+  transition: color 0.3s ease, border-bottom 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover {
+  color: #ffffff; /* white on hover */
+}
+
+.navbar-nav .nav-link.active {
+  color: #ffffff; /* active stays white */
+  border-bottom: 3px solid #8000ff; /* purple underline */
+}
+
+.navbar-toggler {
+  border: none;
+}
+
+.navbar-toggler-icon {
+  filter: invert(1); /* make toggle icon visible on dark bg */
+}
