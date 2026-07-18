@@ -22,16 +22,169 @@
     - Redirect to Browse Skills after successful submission
 ========================================================== -->
 
-<!-- Navbar -->
+<div class="add-skill-container">
 
-<!-- Sidebar -->
+    <h1 class="page-title">Add a New Skill</h1>
+    <p class="page-subtitle">
+        Share your knowledge and help others learn something new.
+    </p>
 
-<!-- Main Content -->
+    <form action="/skills/add" method="POST" class="skill-form">
 
-<!-- Page Title -->
+        <!-- Skill Name -->
+        <div class="form-group">
+            <label>Skill Name</label>
 
-<!-- Add Skill Form -->
+            <input
+                type="text"
+                name="skill_name"
+                placeholder="Example: Python Programming"
+                required>
+        </div>
 
-<!-- Save Button -->
 
-<!-- Cancel Button -->
+        <!-- Category -->
+        <div class="form-group">
+            <label>Category</label>
+
+            <select name="category" required>
+
+                <option value="">Select Category</option>
+
+                <option value="Technology">
+                    Technology
+                </option>
+
+                <option value="Language">
+                    Language
+                </option>
+
+                <option value="Music">
+                    Music
+                </option>
+
+                <option value="Design">
+                    Design
+                </option>
+
+                <option value="Business">
+                    Business
+                </option>
+
+                <option value="Lifestyle">
+                    Lifestyle
+                </option>
+
+                <option value="Sports">
+                    Sports
+                </option>
+
+                <option value="Other">
+                    Other
+                </option>
+
+            </select>
+        </div>
+
+
+        <!-- Skill Level -->
+        <div class="form-group">
+            <label>Skill Level</label>
+
+            <select name="skill_level" required>
+
+                <option value="">
+                    Select Level
+                </option>
+
+                <option value="Beginner">
+                    Beginner
+                </option>
+
+                <option value="Intermediate">
+                    Intermediate
+                </option>
+
+                <option value="Advanced">
+                    Advanced
+                </option>
+
+                <option value="Expert">
+                    Expert
+                </option>
+
+            </select>
+        </div>
+
+
+        <!-- Description -->
+        <div class="form-group">
+            <label>Description</label>
+
+            <textarea
+                name="description"
+                rows="6"
+                placeholder="Tell others what you will teach..."
+                required></textarea>
+
+        </div>
+
+
+        <!-- Availability -->
+        <div class="form-group">
+            <label>Availability</label>
+
+            <select name="availability" required>
+
+                <option value="">
+                    Select Availability
+                </option>
+
+                <option value="Weekdays">
+                    Weekdays
+                </option>
+
+                <option value="Weekends">
+                    Weekends
+                </option>
+
+                <option value="Evenings">
+                    Evenings
+                </option>
+
+                <option value="Flexible">
+                    Flexible
+                </option>
+
+            </select>
+        </div>
+
+
+        <!-- Location -->
+        <div class="form-group">
+            <label>Location</label>
+
+            <input
+                type="text"
+                name="location"
+                placeholder="Example: Online / Tampines"
+                required>
+        </div>
+
+
+        <!-- Buttons -->
+        <div class="button-group">
+
+            <a href="/skills" class="cancel-btn">
+                Cancel
+            </a>
+
+            <button type="submit" class="submit-btn">
+                Publish Skill
+            </button>
+
+        </div>
+
+    </form>
+
+</div>

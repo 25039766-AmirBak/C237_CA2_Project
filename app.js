@@ -18,13 +18,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 const connection = mysql.createConnection({
-    host: 'c237-adib-mysql.mysql.database.azure.com',
-    user: 'c237_026',
-    password: 'c237026@2026!',
-    database: 'c237_026_team4_userdb',
-    ssl:{
-        rejectUnauthorized:false
-    }
+    host: 'localhost',
+    user: 'root',
+    password: 'RP738964$',
+    database: 'skillswap_db',
   });
 
 connection.connect((err) => {
@@ -91,6 +88,7 @@ const validateRegistration = (req, res, next) => {
     next();
 };
 
+
 /********************************************************************
                     Index.ejs : HomePage
 ********************************************************************/
@@ -131,21 +129,174 @@ app.get("/", (req, res) => {
 ********************************************************************/
 
 // ===============================================
-// TODO: Create GET /skills
-// Display all available skills
-// ===============================================
+// TODO: Create GET /skills - display, search, filter and sort listings
+app.get("/skills", (req, res) => {
+    const keyword = req.query.keyword ? req.query.keyword.trim(): "";
+    const category = req.query.category ? req.query.category.trim() : "";
+    const level = req.query.level ? req.query.level.trim() : "";
+    const sort = req.query.sort ? req.query.sort.trim() : "newest";
+
+    let sql = ' SELECT skills.id,skills.user_id,skills.skill_name,skills.category,skills.skill_level,skills.description, skills.availability,skills.location,skills.created_at,users.name AS owner_name,users.profile_picture AS owner_picture FROM skills INNER JOIN users ON skill.user_id = user.id WHERE 1=1';
+
+    const values =[];
+    if (keyword !== "") {
+        const searchKeyword = '%${keyword}%';
+        sql += 'AND (skills.skill_name LIKE ? OR skills.description LIKE ? OR skills.category LIKE ? OR users.name LIKE ?)';
+
+        values.push(searchKeyword,searchKeyword,searchKeyword,searchKeyword);
+    }
+
+    if (category !== "" && category !== "All") {
+        sql += " AND skills.category = ?";
+        values.push(category);
+    }
+
+    if (level !== "" && level !== "All") {
+        sql += " AND skills.skill_level = ?";
+        values.push(level);
+    }
+
+    if (sort === "oldest") {
+        sql += " ORDER BY skills.created_at ASC";
+    } else if (sort === "name-asc") {
+        sql += " ORDER BY skills.skill_name ASC";
+    } else if (sort === "name-desc") {
+        sql += " ORDER BY skills.skill_name DESC";
+    } else {
+        sql += " ORDER BY skills.created_at DESC";
+    }
+
+    connection.query(sql, values, (err, results) => {
+        if (err) {
+            console.error("Error retrieving skills:", err);
+
+            return res.status(500).send(
+                "Unable to retrieve skill listings."
+            );
+        }
+        return res.render("skills", {
+            skills: results,
+            keyword: keyword,
+            selectedCategory: category || "All",
+            selectedLevel: level || "All",
+            selectedSort: sort,
+            currentUserId: req.session.userId || null
+        });
+    });
+});
 
 
 // ===============================================
-// TODO: Create POST /skills/add
-// Save new skill into database
-// ===============================================
+// TODO: Create GET /skills/search // Search skills using keyword
+app.get("/skills/search", (req, res) => {
+    const keyword = req.query.keyword ? req.query.keyword.trim() : "";
 
+    res.redirect(
+        `/skills?keyword=${encodeURIComponent(keyword)}`
+    );
+});
+
+// ========================================================
+// TODO: Create GET /skills/add - display the Add Skill page
+app.get("/skills/add", (req, res) => {
+    return res.render("addSkill",{
+        error:null,
+        formData:{}
+    });
+});
+
+// ===========================================================
+// TODO: Create POST /skills/add - validate and insert a skill
+app.post("/skills/add", (req, res) => {
+    const skillName = req.body.skill_name ? req.body.skill_name.trim()  : "";
+    const category = req.body.category ? req.body.category.trim() : "";
+    const skillLevel = req.body.skill_level ? req.body.skill_level.trim() : "";
+    const description = req.body.description ? req.body.description.trim() : "";
+    const availability = req.body.availability ? req.body.availability.trim(): "";
+    const location = req.body.location ? req.body.location.trim() : "";
+
+    const formData = {
+        skill_name: skillName,
+        category: category,
+        skill_level: skillLevel,
+        description: description,
+        availability: availability,
+        location: location
+    };
+
+    if (
+        skillName === "" ||
+        category === "" ||
+        skillLevel === "" ||
+        description === ""
+    ) {
+        return res.status(400).render("addSkill", {
+            error:
+                "Skill name, category, skill level and description are required.",
+            formData: formData
+        });
+    }
+
+    const sql = 'INSERT INTO skills (user_id,skill_name,category,skill_level,description,availability,location) VALUES (?, ?, ?, ?, ?, ?, ?)';
+
+    const values = [
+        req.session.userId,
+        skillName,
+        category,
+        skillLevel,
+        description,
+        availability || null,
+        location || null
+    ];
+
+    connection.query(sql, values, (err, result) => {
+        if (err) {
+            console.error("Error adding skill:", err);
+
+            return res.status(500).render("addSkill", {
+                error:
+                    "Unable to add the skill. Please try again.",
+                formData: formData
+            });
+        }
+
+        return res.redirect("/skills");
+    });
+});
 
 // ===============================================
-// TODO: Create GET /skills/search
-// Search skills using keyword
-// ===============================================
+// TODO: Create POST /skills/:id/delete — delete the logged-in user’s listing
+app.post("/skills/:id/delete" , (req, res) => {
+    const skillId = Number.parseInt(req.params.id,10);
+
+    if(!Number.isInteger(skillId) || skillId <= 0)
+    {
+        return res.status(400).send("Invalid skill ID.");
+    }
+
+    const sql = 'DELETE FROM skills WHERE id =? AND user_id =?';
+    const values =[skillId, req.session.userId];
+
+    connection.query(sql, values, (err, result) => {
+            if (err) {
+                console.error(
+                    "Error deleting skill:",
+                    err
+                );
+                return res.status(500).send(
+                    "Unable to delete the skill."
+                );
+            }
+            if (result.affectedRows === 0) {
+                return res.status(404).send(
+                    "Skill not found or you do not own this listing."
+                );
+            }
+            return res.redirect("/skills");
+        });
+    }
+);
+
 
 /********************************************************************
                     Member 3: MATCHING SYSTEM
