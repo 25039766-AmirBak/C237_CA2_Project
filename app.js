@@ -103,7 +103,7 @@ app.get("/", (req, res) => {
 
 
 /********************************************************************
-                    Mmeber 1 :USER REGISTRATION
+                    Member 1 :USER REGISTRATION
 ********************************************************************/
 
 // ===============================================
@@ -172,21 +172,131 @@ app.get("/", (req, res) => {
 ********************************************************************/
 
 // ===============================================
-// TODO: Award XP after completed exchange
+// Gamification Helper Functions
 // ===============================================
 
+//Award XP to user and triggers level up check
+function awardXP(userId, amount) {
+    connection.query(
+        'UPDATE users SET xp = COALESCE(xp, 0) + ? WHERE id = ?',
+        [amount, userId],
+        (err) => {
+            if (err) {
+                console.error('Error awarding XP:', err);
+                return;
+            }
+            checkLevelUp(userId);
+        }
+    );
+}
+
+//Level Up check: triggers if have enough XP
+function checkLevelUp(userId) {
+    connection.query(
+        'SELECT xp, level FROM users WHERE id = ?',
+        [userId],
+        (err, results) => {
+            if (err || results.length === 0) {
+                console.error('Error checking level:', err);
+                return;
+            }
+            const xp = results[0].xp || 0;
+            const level = results[0].level || 1;
+            if (xp >= level * 100) {
+                connection.query(
+                    'UPDATE users SET level = level + 1 WHERE id = ?',
+                    [userId]
+                );
+            }
+        }
+    );
+}
+
+//insert badge into user_badges SQL table, INSERT IGNORE is to prevent duplicates
+function awardBadge(userId, badgeName) {
+    connection.query(
+        'INSERT IGNORE INTO user_badges (user_id, badge_name) VALUES (?, ?)',
+        [userId, badgeName]
+    );
+}
+
+//Checks exchange history & completion, awarding badges to both learner & teacher if completed
+function checkAndAwardBadges(userId) {
+    connection.query(
+        'SELECT COUNT(*) AS total FROM matches WHERE (learner_id = ? OR teacher_id = ?) AND status = "completed"',
+        [userId, userId],
+        (err, result) => {
+            if (err) return;
+            const total = result[0].total;
+            if (total >= 1) awardBadge(userId, 'First Trade');
+            if (total >= 10) awardBadge(userId, 'Skill Master');
+        }
+    );
+    connection.query(
+        'SELECT COUNT(*) AS count FROM matches WHERE teacher_id = ? AND status = "completed"',
+        [userId],
+        (err, result) => {
+            if (err) return;
+            if (result[0].count >= 5) awardBadge(userId, 'Top Teacher');
+        }
+    );
+}
 
 // ===============================================
-// TODO: Update progress bar
+// GET /badges - Display badges and progress page
 // ===============================================
 
+//Protected route, queries user XP, level, exchange stuff & earned badges before routing to badges.ejs
+app.get('/badges', checkAuthenticated, (req, res) => {
+    const userId = req.session.user.id;
 
-// ===============================================
-// TODO: Award badges
-// First Trade
-// Top Teacher
-// Skill Master
-// ===============================================
+    connection.query('SELECT xp, level FROM users WHERE id = ?', [userId], (err, userRows) => {
+        if (err || userRows.length === 0) {
+            req.flash('error', 'User not found');
+            return res.redirect('/');
+        }
+
+        const xp = userRows[0].xp || 0;
+        const level = userRows[0].level || 1;
+        const xpForNextLevel = level * 100;
+
+        connection.query(
+            'SELECT COUNT(*) AS total FROM matches WHERE (learner_id = ? OR teacher_id = ?) AND status = "completed"',
+            [userId, userId],
+            (err, exchangeRows) => {
+                const totalExchanges = exchangeRows ? exchangeRows[0].total : 0;
+
+                connection.query(
+                    'SELECT COUNT(*) AS count FROM matches WHERE teacher_id = ? AND status = "completed"',
+                    [userId],
+                    (err, teacherRows) => {
+                        const teacherExchanges = teacherRows ? teacherRows[0].count : 0;
+
+                        connection.query(
+                            'SELECT badge_name FROM user_badges WHERE user_id = ?',
+                            [userId],
+                            (err, badgeRows) => {
+                                const earnedBadges = badgeRows ? badgeRows.map(b => b.badge_name) : [];
+
+                                res.render('badges', {
+                                    pageTitle: 'Badges',
+                                    activePage: 'Badges',
+                                    xp,
+                                    level,
+                                    xpForNextLevel,
+                                    progressPercent: Math.min((xp / xpForNextLevel) * 100, 100),
+                                    totalExchanges,
+                                    teacherExchanges,
+                                    earnedBadges
+                                });
+                            }
+                        );
+                    }
+                );
+            }
+        );
+    });
+});
 
 /********************************************************************
                    Member 5: CHAT & SCHEDULING
