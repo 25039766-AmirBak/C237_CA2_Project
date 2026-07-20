@@ -212,11 +212,22 @@ function checkLevelUp(userId) {
     );
 }
 
-//insert badge into user_badges SQL table, INSERT IGNORE is to prevent duplicates
+//Check if badge already earned, then insert if not
 function awardBadge(userId, badgeName) {
     connection.query(
-        'INSERT IGNORE INTO user_badges (user_id, badge_name) VALUES (?, ?)',
-        [userId, badgeName]
+        'SELECT id FROM user_badges WHERE user_id = ? AND badge_name = ?',
+        [userId, badgeName],
+        (err, rows) => {
+            if (err) {
+                console.error('Error checking badge:', err);
+                return;
+            }
+            if (rows.length > 0) return;
+            connection.query(
+                'INSERT INTO user_badges (user_id, badge_name) VALUES (?, ?)',
+                [userId, badgeName]
+            );
+        }
     );
 }
 
