@@ -9,303 +9,290 @@
     - Search skills
     - Filter by category
     - View user profile
-    - Pagination (optional)
 ========================================================== -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/skill.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <title>SkillSwap</title>
+</head>
+<body class="browse-skill-page">
+    <%- include('partials/navbar') %>
+    <div class="browse-skill-container">
 
-<div class="browse-skills-container">
+        <div class="browse-header">
+            <div>
+                <h1>Browse Skills</h1>
+                <p>Discover skills, connect with others, and grow together.</p>
+            </div>
 
-    <div class="browse-header">
-        <div>
-            <h1>Browse Skills</h1>
-            <p>Discover skills, connect with others, and grow together.</p>
-        </div>
-
-        <a href="/skills/add" class="add-skill-btn">
-            + Add Your Skill
-        </a>
-    </div>
-
-
-    <!-- Search and Filter Form -->
-    <form action="/skills" method="GET" class="filter-form">
-
-        <div class="search-box">
-            <span class="search-icon">⌕</span>
-
-            <input
-                type="text"
-                name="keyword"
-                placeholder="Search skills..."
-                value="<%= typeof keyword !== 'undefined' ? keyword : '' %>">
+            <a href="/skills/add" class="add-skill-btn">
+                + Add Your Skill
+            </a>
         </div>
 
 
-        <select name="category">
-            <option value="">All Categories</option>
-
-            <option
-                value="Technology"
-                <%= category === "Technology" ? "selected" : "" %>>
-                Technology
-            </option>
-
-            <option
-                value="Design"
-                <%= category === "Design" ? "selected" : "" %>>
-                Design
-            </option>
-
-            <option
-                value="Music"
-                <%= category === "Music" ? "selected" : "" %>>
-                Music
-            </option>
-
-            <option
-                value="Language"
-                <%= category === "Language" ? "selected" : "" %>>
-                Language
-            </option>
-
-            <option
-                value="Lifestyle"
-                <%= category === "Lifestyle" ? "selected" : "" %>>
-                Lifestyle
-            </option>
-
-            <option
-                value="Business"
-                <%= category === "Business" ? "selected" : "" %>>
-                Business
-            </option>
-
-            <option
-                value="Sports"
-                <%= category === "Sports" ? "selected" : "" %>>
-                Sports
-            </option>
-
-            <option
-                value="Other"
-                <%= category === "Other" ? "selected" : "" %>>
-                Other
-            </option>
-        </select>
-
-
-        <select name="level">
-            <option value="">All Levels</option>
-
-            <option
-                value="Beginner"
-                <%= level === "Beginner" ? "selected" : "" %>>
-                Beginner
-            </option>
-
-            <option
-                value="Intermediate"
-                <%= level === "Intermediate" ? "selected" : "" %>>
-                Intermediate
-            </option>
-
-            <option
-                value="Advanced"
-                <%= level === "Advanced" ? "selected" : "" %>>
-                Advanced
-            </option>
-
-            <option
-                value="Expert"
-                <%= level === "Expert" ? "selected" : "" %>>
-                Expert
-            </option>
-        </select>
-
-
-        <select name="sort">
-            <option
-                value="newest"
-                <%= sort === "newest" ? "selected" : "" %>>
-                Newest
-            </option>
-
-            <option
-                value="oldest"
-                <%= sort === "oldest" ? "selected" : "" %>>
-                Oldest
-            </option>
-
-            <option
-                value="name_asc"
-                <%= sort === "name_asc" ? "selected" : "" %>>
-                Name A–Z
-            </option>
-
-            <option
-                value="name_desc"
-                <%= sort === "name_desc" ? "selected" : "" %>>
-                Name Z–A
-            </option>
-        </select>
+        <!-- Search and Filter Form -->
+        <form action="/skills" method="GET" class="filter-form">
+
+            <div class="search-box">
+                <span class="search-icon">⌕</span>
+
+                <input
+                    type="text"
+                    name="keyword"
+                    placeholder="Search skills..."
+                    value="<%= typeof keyword !== 'undefined' ? keyword : '' %>">
+            </div>
+
+
+            <select name="category">
+                <option value="">All Categories</option>
+
+                <option
+                    value="Technology" <%= selectedCategory === "Technology" ? "selected" : "" %>>
+                    Technology
+                </option>
+
+                <option
+                    value="Design"<%= selectedCategory === "Design" ? "selected" : "" %>>
+                    Design
+                </option>
+
+                <option
+                    value="Music"
+                    <%= selectedCategory === "Music" ? "selected" : "" %>>
+                    Music
+                </option>
+
+                <option
+                    value="Language" <%= selectedCategory === "Language" ? "selected" : "" %>>
+                    Language
+                </option>
+
+                <option
+                    value="Lifestyle" <%= selectedCategory === "Lifestyle" ? "selected" : "" %>>
+                    Lifestyle
+                </option>
+
+                <option
+                    value="Business" <%= selectedCategory === "Business" ? "selected" : "" %>>
+                    Business
+                </option>
+
+                <option
+                    value="Sports" <%= selectedCategory === "Sports" ? "selected" : "" %>>
+                    Sports
+                </option>
+
+                <option
+                    value="Other" <%= selectedCategory === "Other" ? "selected" : "" %>>
+                    Other
+                </option>
+            </select>
+
+
+            <select name="level">
+                <option value="">All Levels</option>
+
+                <option
+                    value="Beginner" <%= selectedLevel === "Beginner" ? "selected" : "" %>>
+                    Beginner
+                </option>
+
+                <option
+                    value="Intermediate" <%= selectedLevel === "Intermediate" ? "selected" : "" %>>
+                    Intermediate
+                </option>
+
+                <option
+                    value="Advanced" <%= selectedLevel === "Advanced" ? "selected" : "" %>>
+                    Advanced
+                </option>
+
+                <option
+                    value="Expert" <%= selectedLevel === "Expert" ? "selected" : "" %>>
+                    Expert
+                </option>
+            </select>
+
+
+            <select name="sort">
+                <option
+                    value="newest" <%= selectedSort === "newest" ? "selected" : "" %>>
+                    Newest
+                </option>
+
+                <option
+                    value="oldest" <%= selectedSort === "oldest" ? "selected" : "" %>>
+                    Oldest
+                </option>
+
+                <option
+                    value="name-asc" <%= selectedSort === "name-asc" ? "selected" : "" %>>
+                    Name A-Z
+                </option>
+
+                <option
+                    value="name-desc" <%= selectedSort === "name-desc" ? "selected" : "" %>>
+                    Name Z-A
+                </option>
+            </select>
 
+            <select name="skill_type">
+                    <option value="">All Types</option>
 
-        <button type="submit" class="filter-btn">
-            Search
-        </button>
+                    <option value="Offer"<%= typeof selectedSkillType !== "undefined" && selectedSkillType === "Offer" ? "selected": "" %>>
+                        Offering
+                    </option>
 
-        <a href="/skills" class="clear-btn">
-            Clear
-        </a>
+                    <option value="Learn" <%= typeof selectedSkillType !== "undefined" && selectedSkillType === "Learn" ? "selected" : "" %>>
+                        Looking to Learn
+                    </option>
+                </select>
 
-    </form>
 
+            <button type="submit" class="filter-btn"> Search</button>
 
-    <!-- Result Count -->
-    <div class="result-header">
-        <h2>All Skills</h2>
+            <a href="/skills" class="clear-btn"> Clear</a>
 
-        <p>
-            <%= skills ? skills.length : 0 %>
-            skill<%= skills && skills.length === 1 ? "" : "s" %> found
-        </p>
-    </div>
+        </form>
 
 
-    <!-- Skills Grid -->
-    <% if (skills && skills.length > 0) { %>
-
-        <div class="skills-grid">
-
-            <% skills.forEach(skill => { %>
-
-                <article class="skill-card">
-
-                    <div class="skill-card-top">
-
-                        <div class="skill-icon">
-                            <% if (skill.category === "Technology") { %>
-                                &lt;/&gt;
-                            <% } else if (skill.category === "Design") { %>
-                                ✎
-                            <% } else if (skill.category === "Music") { %>
-                                ♫
-                            <% } else if (skill.category === "Language") { %>
-                                文
-                            <% } else if (skill.category === "Lifestyle") { %>
-                                ✦
-                            <% } else if (skill.category === "Business") { %>
-                                ◫
-                            <% } else if (skill.category === "Sports") { %>
-                                ⚡
-                            <% } else { %>
-                                ✧
-                            <% } %>
-                        </div>
-
-
-                        <div class="skill-main-info">
-
-                            <div class="skill-title-row">
-                                <h3><%= skill.skill_name %></h3>
-
-                                <span class="level-badge">
-                                    <%= skill.skill_level %>
-                                </span>
-                            </div>
-
-                            <span class="category-badge">
-                                <%= skill.category %>
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-                    <p class="skill-description">
-                        <%= skill.description %>
-                    </p>
-
-
-                    <div class="skill-details">
-
-                        <div class="detail-item">
-                            <span>◷</span>
-                            <span><%= skill.availability %></span>
-                        </div>
-
-                        <div class="detail-item">
-                            <span>⌖</span>
-                            <span><%= skill.location %></span>
-                        </div>
-
-                    </div>
-
-
-                    <div class="skill-card-footer">
-
-                        <div class="owner-info">
-
-                            <% if (skill.owner_picture) { %>
-
-                                <img
-                                    src="/uploads/<%= skill.owner_picture %>"
-                                    alt="<%= skill.owner_name %>"
-                                    class="owner-image">
-
-                            <% } else { %>
-
-                                <div class="owner-placeholder">
-                                    <%= skill.owner_name
-                                        ? skill.owner_name.charAt(0).toUpperCase()
-                                        : "U" %>
-                                </div>
-
-                            <% } %>
-
-                            <div>
-                                <span class="owner-label">Offered by</span>
-
-                                <strong>
-                                    <%= skill.owner_name || "Unknown User" %>
-                                </strong>
-                            </div>
-
-                        </div>
-
-
-                        <a
-                            href="/skills/<%= skill.id %>"
-                            class="view-skill-btn">
-                            View Skill
-                        </a>
-
-                    </div>
-
-                </article>
-
-            <% }) %>
-
-        </div>
-
-    <% } else { %>
-
-        <div class="empty-state">
-
-            <div class="empty-icon">⌕</div>
-
-            <h2>No skills found</h2>
+        <!-- Result Count -->
+        <div class="result-header">
+            <h2>All Skills</h2>
 
             <p>
-                Try using another keyword or changing your filters.
+                <%= skills ? skills.length : 0 %>
+                skill<%= skills && skills.length === 1 ? "" : "s" %> found
             </p>
-
-            <a href="/skills" class="empty-btn">
-                View All Skills
-            </a>
-
         </div>
 
-    <% } %>
 
-</div>
+        <!-- Skills Grid -->
+        <% if (skills && skills.length > 0) { %>
+
+            <div class="skill-grid">
+
+                <% skills.forEach(skill => { %>
+
+                    <article class="skill-card">
+
+                        <div class="skill-card-top">
+
+                            <div class="skill-icon">
+                                <% if (skill.category === "Technology") { %>
+                                    &lt;/&gt;
+                                <% } else if (skill.category === "Design") { %>
+                                    ✎
+                                <% } else if (skill.category === "Music") { %>
+                                    ♫
+                                <% } else if (skill.category === "Language") { %>
+                                    文
+                                <% } else if (skill.category === "Lifestyle") { %>
+                                    ✦
+                                <% } else if (skill.category === "Business") { %>
+                                    ◫
+                                <% } else if (skill.category === "Sports") { %>
+                                    ⚡
+                                <% } else { %>
+                                    ✧
+                                <% } %>
+                            </div>
+
+
+                            <div class="skill-main-info">
+
+                                <div class="skill-title-row">
+                                    <h3><%= skill.skill_name %></h3>
+
+                                    <span class="level-badge">
+                                        <%= skill.skill_level %>
+                                    </span>
+                                </div>
+
+                                <span class="category-badge">
+                                    <%= skill.category %>
+                                </span>
+
+                                <span class="skill-type-badge <%= skill.skill_type === 'Offer'
+                                    ? 'offer-badge'
+                                    : 'learn-badge' %>">
+
+                                    <%= skill.skill_type === "Offer"
+                                        ? "● Offering"
+                                        : "● Looking to Learn" %>
+                                </span>
+
+                            </div>
+                        </div>
+
+                        <p class="skill-description"> <%= skill.description %> </p>
+
+                        <div class="skill-details">
+                            <div class="detail-item">
+                                <span>◷</span>
+                                <span><%= skill.availability %></span>
+                            </div>
+                            <div class="detail-item">
+                                <span>⌖</span>
+                                <span><%= skill.location %></span>
+                            </div>
+                        </div>
+
+
+                        <div class="skill-card-footer">
+                            <div class="owner-info">
+                                <div>
+                                    <span class="owner-label"> <%= skill.skill_type === "Offer" ? "Offered by" : "Requested by" %></span>
+                                    <strong>
+                                        <%= skill.owner_name || "Unknown User" %>
+                                    </strong>
+                                </div>
+
+                            </div>
+
+                            <% if (
+                                typeof currentUserId !== "undefined" &&
+                                skill.user_id === currentUserId
+                            ) { %>
+
+                                <a href="/my-skills" class="find-skill-btn">
+                                    Manage Skill
+                                </a>
+
+                            <% } else { %>
+
+                                <a href="/skills/<%= skill.id %>" class="find-skill-btn">
+                                    Find Matches
+                                </a>
+
+                            <% } %>
+                        </div>
+                    </article>
+                <% }) %>
+            </div>
+
+        <% } else { %>
+
+            <div class="empty-state">
+
+                <div class="empty-icon">⌕</div>
+                <h2>No skills found</h2>
+                <p>Try using another keyword or changing your filters.</p>
+
+                <a href="/skills" class="empty-btn">View All Skills</a>
+
+            </div>
+
+        <% } %>
+
+    </div>
+
+</body>
+</html>
