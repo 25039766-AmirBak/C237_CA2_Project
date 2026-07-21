@@ -258,9 +258,12 @@ function checkAndAwardBadges(userId) {
 // ===============================================
 
 //Protected route, queries user XP, level, exchange stuff & earned badges before routing to badges.ejs
-app.get('/badges', checkAuthenticated, (req, res) => {
-    const userId = req.session.user.id;
-
+//TEMPORARY FIX: comment out checkAuthenticated & hardcode userId=1 for testing without login
+//Remove this block and restore the original line when login is ready
+const testUserId = 1;
+app.get('/badges', /*checkAuthenticated,*/ (req, res) => {
+    const userId = req.session.user ? req.session.user.id : testUserId;
+    
     connection.query('SELECT xp, level FROM users WHERE id = ?', [userId], (err, userRows) => {
         if (err || userRows.length === 0) {
             req.flash('error', 'User not found');

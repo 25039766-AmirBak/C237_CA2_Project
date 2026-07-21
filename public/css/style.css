@@ -1,38 +1,86 @@
-/* ==========================
-   Navbar Custom Styles
-   ========================== */
+:root {
+    --purple-primary: #6f42c1;
+    --purple-dark: #5a32a3;
+    --purple-light: #9c27b0;
+    --purple-bg: #f3e8ff;
+}
 
 .navbar {
-  background-color: #1a1a1a; /* dark background */
-  padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, var(--purple-primary), var(--purple-light)) !important;
 }
 
-.navbar-brand span {
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: #ffffff;
-  letter-spacing: 1px;
+.navbar .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    transition: color 0.2s;
 }
 
-.navbar-nav .nav-link {
-  color: #cccccc; /* lighter gray for inactive links */
-  margin-right: 15px;
-  transition: color 0.3s ease, border-bottom 0.3s ease;
+.navbar .nav-link:hover {
+    color: #fff !important;
 }
 
-.navbar-nav .nav-link:hover {
-  color: #ffffff; /* white on hover */
+.navbar .dropdown-menu {
+    background-color: var(--purple-primary);
+    border: none;
 }
 
-.navbar-nav .nav-link.active {
-  color: #ffffff; /* active stays white */
-  border-bottom: 3px solid #8000ff; /* purple underline */
+.navbar .dropdown-item {
+    color: rgba(255, 255, 255, 0.9);
 }
 
-.navbar-toggler {
-  border: none;
+.navbar .dropdown-item:hover {
+    background-color: var(--purple-dark);
+    color: #fff;
 }
 
-.navbar-toggler-icon {
-  filter: invert(1); /* make toggle icon visible on dark bg */
+.btn-primary {
+    background-color: var(--purple-primary);
+    border-color: var(--purple-primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--purple-dark);
+    border-color: var(--purple-dark);
+}
+
+.btn-outline-primary {
+    color: var(--purple-primary);
+    border-color: var(--purple-primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--purple-primary);
+    border-color: var(--purple-primary);
+    color: #fff;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--purple-primary), var(--purple-light));
+}
+
+.card {
+    border-color: #e0d4f0;
+}
+
+.card.border-success {
+    border-color: var(--purple-primary) !important;
+}
+
+a {
+    color: var(--purple-primary);
+}
+
+a:hover {
+    color: var(--purple-dark);
+}
+
+.badge.bg-success {
+    background-color: var(--purple-primary) !important;
+}
+
+.text-primary {
+    color: var(--purple-primary) !important;
+}
+
+.bg-purple-gradient {
+    background: linear-gradient(135deg, var(--purple-primary), var(--purple-light));
 }
