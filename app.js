@@ -369,7 +369,12 @@ app.get("/skills/success/:id",checkAuthenticated, (req, res) => {
         }
 
         if (results.length === 0) {
-            return res.status(404).send("Skill not found.");
+            console.log("Skill ID:", skillId);
+            console.log("Session user ID:", userId);
+
+            return res.status(404).send(
+                "Skill not found or this skill does not belong to the current user."
+            );
         }
 
         return res.render("skillSuccess", {
