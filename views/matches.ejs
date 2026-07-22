@@ -13,3 +13,438 @@
 ========================================================== -->
 
 <!-- Match Cards -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Matches | SkillSwap</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        body {
+            background: #f5f2ff;
+            color: #24212d;
+            min-height: 100vh;
+        }
+
+        .matching-container {
+            width: min(1180px, 92%);
+            margin: 42px auto 70px;
+        }
+
+        .matching-hero {
+            background: linear-gradient(135deg, #35105f, #7b2cbf);
+            border-radius: 24px;
+            color: white;
+            padding: 38px;
+            box-shadow: 0 16px 40px rgba(72, 27, 117, 0.22);
+            margin-bottom: 28px;
+        }
+
+        .matching-hero h1 {
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .matching-hero p {
+            max-width: 720px;
+            margin: 0;
+            color: rgba(255, 255, 255, 0.84);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0 34px;
+        }
+
+        .summary-card,
+        .request-panel,
+        .empty-state {
+            background: white;
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 8px 26px rgba(48, 31, 68, 0.08);
+        }
+
+        .summary-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #7026ac;
+        }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 32px 0 18px;
+        }
+
+        .section-title h2 {
+            margin: 0;
+            font-size: 1.45rem;
+            font-weight: 800;
+        }
+
+        .match-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .match-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(48, 31, 68, 0.09);
+            border: 1px solid #ece5f6;
+        }
+
+        .match-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .partner-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: white;
+            background: #7026ac;
+            font-size: 1.25rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .partner-info {
+            flex: 1;
+        }
+
+        .partner-info h3 {
+            margin: 0 0 3px;
+            font-size: 1.15rem;
+            font-weight: 800;
+        }
+
+        .match-score {
+            min-width: 88px;
+            text-align: center;
+            background: #f0e6fa;
+            color: #66249b;
+            border-radius: 14px;
+            padding: 9px 10px;
+            font-weight: 800;
+        }
+
+        .match-score small {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 700;
+        }
+
+        .skill-box {
+            margin: 18px 0;
+            border-radius: 14px;
+            padding: 14px 16px;
+            background: #faf8fd;
+            border: 1px solid #eee7f5;
+        }
+
+        .skill-box strong {
+            color: #632396;
+        }
+
+        .detail-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .detail-tag {
+            background: #f3eff8;
+            border-radius: 999px;
+            padding: 7px 11px;
+            font-size: 0.82rem;
+        }
+
+        .compatibility-list {
+            margin: 0 0 18px;
+            padding: 0;
+            list-style: none;
+            font-size: 0.9rem;
+        }
+
+        .compatibility-list li {
+            margin-bottom: 6px;
+        }
+
+        .request-form select {
+            margin-bottom: 10px;
+        }
+
+        .btn-purple {
+            background: #7026ac;
+            border-color: #7026ac;
+            color: white;
+        }
+
+        .btn-purple:hover {
+            background: #581985;
+            border-color: #581985;
+            color: white;
+        }
+
+        .request-columns {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .request-item {
+            border: 1px solid #ece5f6;
+            border-radius: 14px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .request-item:first-of-type {
+            margin-top: 0;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: capitalize;
+        }
+
+        .status-pending { background: #fff3cd; color: #7a5700; }
+        .status-accepted { background: #d7f5df; color: #176b32; }
+        .status-rejected,
+        .status-cancelled { background: #f8d7da; color: #842029; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 24px;
+        }
+
+        .empty-state h3 {
+            font-weight: 800;
+        }
+
+        @media (max-width: 850px) {
+            .summary-grid,
+            .match-grid,
+            .request-columns {
+                grid-template-columns: 1fr;
+            }
+
+            .matching-hero {
+                padding: 28px 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Use the shared navbar location from the merged Skill Listings branch. -->
+    <%- include('partials/navbar') %>
+
+    <main class="matching-container">
+        <section class="matching-hero">
+            <h1>Skill Exchange Matching</h1>
+            <p>
+                Find members who can teach the skills you want to learn.
+                Higher scores mean stronger skill, availability and location compatibility.
+            </p>
+        </section>
+
+        <% if (success) { %>
+            <div class="alert alert-success"><%= success %></div>
+        <% } %>
+
+        <% if (error) { %>
+            <div class="alert alert-danger"><%= error %></div>
+        <% } %>
+
+        <section class="summary-grid">
+            <article class="summary-card">
+                <div class="summary-number"><%= matches.length %></div>
+                <div>Potential matches</div>
+            </article>
+
+            <article class="summary-card">
+                <div class="summary-number"><%= myOfferSkills.length %></div>
+                <div>Skills you offer</div>
+            </article>
+
+            <article class="summary-card">
+                <div class="summary-number"><%= myLearnSkills.length %></div>
+                <div>Skills you want to learn</div>
+            </article>
+        </section>
+
+        <div class="section-title">
+            <h2>Recommended Partners</h2>
+            <span><%= matches.length %> result<%= matches.length === 1 ? '' : 's' %></span>
+        </div>
+
+        <% if (myLearnSkills.length === 0) { %>
+            <section class="empty-state">
+                <h3>Add a skill you want to learn</h3>
+                <p>Your Learn listings are used to find suitable teachers.</p>
+                <a href="/skills/add" class="btn btn-purple">Add Learn Skill</a>
+            </section>
+        <% } else if (matches.length === 0) { %>
+            <section class="empty-state">
+                <h3>No matching offers yet</h3>
+                <p>There is currently no other user offering the same skills you want to learn.</p>
+                <a href="/skills" class="btn btn-outline-dark">Browse All Skills</a>
+            </section>
+        <% } else { %>
+            <section class="match-grid">
+                <% matches.forEach(match => { %>
+                    <article class="match-card">
+                        <div class="match-card-top">
+                            <div class="partner-avatar">
+                                <%= String(match.partner_name || '?').charAt(0).toUpperCase() %>
+                            </div>
+
+                            <div class="partner-info">
+                                <h3><%= match.partner_name %></h3>
+                                <span><%= match.match_label %></span>
+                            </div>
+
+                            <div class="match-score">
+                                <%= match.match_percentage %>%
+                                <small>MATCH</small>
+                            </div>
+                        </div>
+
+                        <div class="skill-box">
+                            <div>They can teach you:</div>
+                            <strong><%= match.requested_skill_name %></strong>
+                            <div class="small text-muted"><%= match.requested_skill_level %> level</div>
+                        </div>
+
+                        <div class="detail-tags">
+                            <span class="detail-tag"><%= match.category %></span>
+                            <span class="detail-tag"><%= match.availability || 'Availability not stated' %></span>
+                            <span class="detail-tag"><%= match.location || 'Location not stated' %></span>
+                        </div>
+
+                        <ul class="compatibility-list">
+                            <li>
+                                <%= match.reciprocal_offer_name ? '✓' : '○' %>
+                                <%= match.reciprocal_offer_name
+                                    ? `They want to learn ${match.reciprocal_offer_name}`
+                                    : 'No direct reciprocal skill found' %>
+                            </li>
+                            <li><%= match.availability_matches ? '✓' : '○' %> Availability compatibility</li>
+                            <li><%= match.location_matches ? '✓' : '○' %> Location compatibility</li>
+                        </ul>
+
+                        <form action="/matches/request" method="POST" class="request-form">
+                            <input type="hidden" name="partner_id" value="<%= match.partner_id %>">
+                            <input type="hidden" name="requested_skill_id" value="<%= match.requested_skill_id %>">
+
+                            <button type="submit" class="btn btn-purple w-100">
+                                Send Exchange Request
+                            </button>
+                        </form>
+                    </article>
+                <% }) %>
+            </section>
+        <% } %>
+
+        <div class="section-title">
+            <h2>Exchange Requests</h2>
+        </div>
+
+        <section class="request-columns">
+            <article class="request-panel">
+                <h3 class="h5 fw-bold mb-3">Incoming</h3>
+
+                <% if (incomingRequests.length === 0) { %>
+                    <p class="text-muted mb-0">You have no incoming requests.</p>
+                <% } %>
+
+                <% incomingRequests.forEach(request => { %>
+                    <div class="request-item">
+                        <div class="d-flex justify-content-between gap-2">
+                            <strong><%= request.requester_name %></strong>
+                            <span class="status-badge status-<%= request.status %>">
+                                <%= request.status %>
+                            </span>
+                        </div>
+
+                        <p class="mb-0 mt-2">
+                            Requests an exchange for
+                            <strong><%= request.requested_skill_name %></strong>
+                        </p>
+
+                        <% if (request.status === 'pending') { %>
+                            <div class="request-actions">
+                                <form action="/matches/request/<%= request.id %>/accept" method="POST">
+                                    <button class="btn btn-success btn-sm" type="submit">Accept</button>
+                                </form>
+                                <form action="/matches/request/<%= request.id %>/reject" method="POST">
+                                    <button class="btn btn-outline-danger btn-sm" type="submit">Reject</button>
+                                </form>
+                            </div>
+                        <% } %>
+                    </div>
+                <% }) %>
+            </article>
+
+            <article class="request-panel">
+                <h3 class="h5 fw-bold mb-3">Sent</h3>
+
+                <% if (outgoingRequests.length === 0) { %>
+                    <p class="text-muted mb-0">You have not sent any requests.</p>
+                <% } %>
+
+                <% outgoingRequests.forEach(request => { %>
+                    <div class="request-item">
+                        <div class="d-flex justify-content-between gap-2">
+                            <strong><%= request.partner_name %></strong>
+                            <span class="status-badge status-<%= request.status %>">
+                                <%= request.status %>
+                            </span>
+                        </div>
+
+                        <p class="mb-0 mt-2">
+                            You requested
+                            <strong><%= request.requested_skill_name %></strong>
+                        </p>
+
+                        <% if (request.status === 'pending') { %>
+                            <form action="/matches/request/<%= request.id %>/cancel" method="POST" class="mt-3">
+                                <button class="btn btn-outline-secondary btn-sm" type="submit">
+                                    Cancel Request
+                                </button>
+                            </form>
+                        <% } %>
+                    </div>
+                <% }) %>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

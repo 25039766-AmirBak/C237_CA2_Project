@@ -1,0 +1,33 @@
+.navbar {
+  background-color: #2a2140; 
+  padding: 0.5rem 1rem;
+}
+
+.navbar-brand span {
+  font-size: 1.2rem;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.navbar-nav .nav-link {
+  color: #cccccc; 
+  margin-right: 15px;
+  transition: color 0.3s ease, border-bottom 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover {
+  color: #ffffff; 
+}
+
+.navbar-nav .nav-link.active {
+  color: #ffffff; 
+  border-bottom: 3px solid #8000ff; 
+}
+
+.navbar-toggler {
+  border: none;
+}
+
+.navbar-toggler-icon {
+  filter: invert(1); 
+}
