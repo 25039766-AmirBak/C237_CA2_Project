@@ -100,7 +100,7 @@ The user with ID 4 must exist in the users table.
 Remove this middleware after Member 1 completes the real
 registration and login system.
 */
-const TEMP_TEST_USER_ID = 2;
+const TEMP_TEST_USER_ID = 1;
 
 app.use((req, res, next) => {
     if (!req.session.user) {
@@ -155,416 +155,6 @@ app.get("/", (req, res) => {
                     Member 2 :SKILL LISTINGS
 ********************************************************************/
 
-const SKILL_CATEGORIES = ['Technology','Language','Music','Design','Business','Lifestyle','Sports','Other'];
-const SKILL_LEVELS = ['Beginner','Intermediate','Advanced','Expert'];
-const SKILL_TYPES = ['Offer','Learn'];
-const AVAILABILITY_OPTIONS = ['Weekdays','Weekends','Evenings','Flexible'];
-
-const getSkillFormData = (body) => {
-    return {
-        skill_name: body.skill_name? body.skill_name.trim(): '',
-        category: body.category ? body.category.trim(): '',
-        skill_level: body.skill_level? body.skill_level.trim() : '',
-        skill_type: body.skill_type ? body.skill_type.trim(): '',
-        description: body.description ? body.description.trim(): '',
-        availability: body.availability? body.availability.trim(): '',
-        location: body.location? body.location.trim(): ''
-    };
-};
-
-const validateSkill = (skill) => {
-    if (
-        !skill.skill_name ||
-        !skill.category ||
-        !skill.skill_level ||
-        !skill.skill_type ||
-        !skill.description ||
-        !skill.availability ||
-        !skill.location
-    ) {return 'Please complete all required fields marked with *.';}
-
-    if (!SKILL_CATEGORIES.includes(skill.category)) {
-        return 'Please select a valid category.';
-    }
-
-    if (!SKILL_LEVELS.includes(skill.skill_level)) {
-        return 'Please select a valid skill level.';
-    }
-
-    if (!SKILL_TYPES.includes(skill.skill_type)) {
-        return 'Please select a valid skill type.';
-    }
-
-    if (
-        !AVAILABILITY_OPTIONS.includes(
-            skill.availability
-        )
-    ) {
-        return 'Please select a valid availability option.';
-    }
-
-    if (
-        skill.skill_name.length < 2 ||
-        skill.skill_name.length > 100
-    ) {
-        return 'Skill name must be between 2 and 100 characters.';
-    }
-
-    if (
-        skill.description.length < 10 ||
-        skill.description.length > 1000
-    ) {
-        return 'Description must be between 10 and 1000 characters.';
-    }
-
-    if (skill.location.length > 100) {
-        return 'Location cannot exceed 100 characters.';
-    }
-
-    return null;
-};
-
-// TODO: Create GET /skills - display, search, filter and sort listings
-app.get("/skills", (req, res) => {
-    const keyword = req.query.keyword ? req.query.keyword.trim(): "";
-    const category = req.query.category ? req.query.category.trim() : "";
-    const level = req.query.level ? req.query.level.trim() : "";
-    const skillType = req.query.skill_type ? req.query.skill_type.trim() : "";
-    const sort = req.query.sort ? req.query.sort.trim() : "newest";
-
-    let sql = ' SELECT skills.id,skills.user_id,skills.skill_name,skills.category,skills.skill_level,skills.skill_type,skills.description, skills.availability,skills.location,skills.created_at,users.name AS owner_name FROM skills INNER JOIN users ON skills.user_id = users.id WHERE 1=1';
-
-    const values =[];
-    if (keyword !== "") {
-        const searchKeyword = `%${keyword}%`;
-        sql += ' AND (skills.skill_name LIKE ? OR skills.description LIKE ? OR skills.category LIKE ? OR users.name LIKE ?)';
-
-        values.push(searchKeyword,searchKeyword,searchKeyword,searchKeyword);
-    }
-
-    if (category !== "" && category !== "All") {
-        sql += " AND skills.category = ?";
-        values.push(category);
-    }
-
-    if (level !== "" && level !== "All") {
-        sql += " AND skills.skill_level = ?";
-        values.push(level);
-    }
-
-    if (skillType !== "") {
-        sql += " AND skills.skill_type = ?";
-        values.push(skillType);
-    }
-
-    if (sort === "oldest") {
-        sql += " ORDER BY skills.created_at ASC";
-    } else if (sort === "name-asc") {
-        sql += " ORDER BY skills.skill_name ASC";
-    } else if (sort === "name-desc") {
-        sql += " ORDER BY skills.skill_name DESC";
-    } else {
-        sql += " ORDER BY skills.created_at DESC";
-    }
-
-    connection.query(sql, values, (err, results) => {
-        if (err) {
-            console.error("Error retrieving skills:", err);
-
-            return res.status(500).send(
-                "Unable to retrieve skill listings."
-            );
-        }
-        return res.render("skills", {
-            skills: results,
-            keyword: keyword,
-            selectedCategory: category || "All",
-            selectedLevel: level || "All",
-            selectedSkillType: skillType,
-            selectedSort: sort,
-            currentUserId: req.session.user.id || null
-        });
-    });
-});
-
-
-// ===============================================
-// TODO: Create GET /skills/search // Search skills using keyword
-app.get("/skills/search", (req, res) => {
-    const keyword = req.query.keyword ? req.query.keyword.trim() : "";
-
-    res.redirect(
-        `/skills?keyword=${encodeURIComponent(keyword)}`
-    );
-});
-
-// ========================================================
-// TODO: Create GET /skills/add - display the Add Skill page
-app.get("/skills/add",checkAuthenticated, (req, res) => {
-    return res.render("addSkill",{
-        error:null,
-        formData:{}
-    });
-});
-
-// ===========================================================
-// TODO: Create POST /skills/add - validate and insert a skill
-app.post("/skills/add", checkAuthenticated,(req, res) => {
-    const userId = req.session.user.id;
-    const formData = getSkillFormData(req.body);
-    const validationError = validateSkill(formData);
-    
-    if (validationError) {
-        return res.status(400).render(
-            'addSkill',
-            {
-                error: validationError,
-                formData: formData
-            }
-        );
-    } 
-    const sql = 'INSERT INTO skills (user_id,skill_name,category,skill_level,skill_type,description,availability,location) VALUES (?, ?, ?, ?, ?, ?, ?,?)';
-
-    const values = [
-        userId,
-        formData.skill_name,
-        formData.category,
-        formData.skill_level,
-        formData.skill_type,
-        formData.description,
-        formData.availability || null,
-        formData.location || null
-    ];
-
-    connection.query(sql, values, (err, result) => {
-        if (err) {
-            console.error("Error adding skill:", err);
-
-            return res.status(500).render("addSkill", {
-                error:
-                    "Unable to add the skill. Please try again.",
-                formData: formData
-            });
-        }
-
-        return res.redirect(`/skills/success/${result.insertId}`);
-    });
-});
-
-// ===========================================================
-// GET /skills/success/:id - display successful skill submission
-app.get("/skills/success/:id",checkAuthenticated, (req, res) => {
-    const userId = req.session.user.id;
-    const skillId = Number.parseInt(req.params.id,10);
-
-    if (
-        !Number.isInteger(skillId) ||
-            skillId <= 0
-    ) {
-        return res.status(400).send('Invalid skill ID.');
-    }
-
-    const sql = 'SELECT id,skill_name,category,skill_level,skill_type,description,availability,location FROM skills WHERE user_id = ?';
-
-    connection.query(sql, [skillId,userId], (err, results) => {
-        if (err) {
-            console.error("Error retrieving skill:", err);
-            return res.status(500).send("Unable to retrieve the skill.");
-        }
-
-        if (results.length === 0) {
-            console.log("Skill ID:", skillId);
-            console.log("Session user ID:", userId);
-
-            return res.status(404).send(
-                "Skill not found or this skill does not belong to the current user."
-            );
-        }
-
-        return res.render("skillSuccess", {
-            skill: results[0]
-        });
-    });
-});
-
-// ===============================================
-// TODO: Create GET /my-skills — delete dispaly user's skill
-app.get("/my-skills",checkAuthenticated, (req, res) => {
-    const userId = req.session.user.id;
-
-    const sql = 'SELECT id,skill_name,category,skill_level,skill_type,description,availability,location,created_at  FROM skills WHERE user_id = ? ORDER BY created_at DESC';
-
-    connection.query(sql, [userId], (err, results) => {
-
-        if (err) {
-            console.error(err);
-            return res.status(500).send("Unable to retrieve skills.");
-        }
-
-        return res.render("myskillpage", {
-            skills: results,
-            savedSkillsCount: 0,
-            success: req.flash("success")[0] || null,
-            error: req.flash("error")[0] || null
-        });
-    });
-});
-
-// ===========================================================
-// GET /skills/:id/edit - display the Edit Skill form
-app.get("/skills/:id/edit",checkAuthenticated, (req, res) => {
-    const skillId = Number.parseInt(req.params.id, 10);
-
-     const userId = req.session.user.id;
-
-    if (!Number.isInteger(skillId) || skillId <= 0) {
-        req.flash('error','Invalid skill ID.');
-
-        return res.redirect('/my-skills');
-    }
-
-    const sql = 'SELECT id, skill_name,category,skill_level,skill_type,description, availability,location FROM skills WHERE id = ? AND user_id = ?';
-
-    connection.query(sql, [skillId, userId], (err, results) => {
-        if (err) {
-            console.error("Error retrieving skill for editing:", err);
-
-            req.flash('error',"Unable to retrieve the skill.");
-    
-            return res.redirect('/my-skills');}
-
-        if (results.length === 0) {
-            return res.status(404).send(
-                "Skill not found or you do not own this skill."
-            );
-        return res.redirect('/my-skills');}
-
-        return res.render("editSkill", {
-            skill: results[0],
-            error: null
-        });
-    });
-});
-
-// ===========================================================
-// POST /skills/:id/edit - update the selected skill
-app.post("/skills/:id/edit",checkAuthenticated, (req, res) => {
-    const skillId = Number.parseInt(req.params.id, 10);
-
-    const userId = req.session.user.id;
-    const formData = getSkillFormData(req.body);
-    const skill = {id: skillId,...formData };
-
-    if (
-        !Number.isInteger(skillId) ||
-        skillId <= 0
-    ) {
-        return res.status(400).render(
-            'editSkill',
-            {
-                skill: skill,
-                error: 'Invalid skill ID.'
-            }
-        );
-    }
-
-    const validationError = validateSkill( formData);
-
-    if (validationError) {
-        return res.status(400).render(
-            'editSkill',
-            {
-                skill: skill,
-                error: validationError
-            }
-        );
-    }
-
-
-
-    const sql = 'UPDATE skills SET skill_name = ?, category = ?,skill_level = ?,skill_type = ?,description = ?,availability = ?,location = ? WHERE id = ? AND user_id = ?';
-
-    const values = [
-        formData.skill_name,
-        formData.category,
-        formData.skill_level,
-        formData.skill_type,
-        formData.description,
-        formData.availability,
-        formData.location,
-        skillId,
-        userId
-    ];
-
-    connection.query(sql, values, (err, result) => {
-        if (err) {
-            console.error("Error updating skill:", err);
-
-            return res.status(500).render("editSkill", {
-                skill: skill,
-                error: "Unable to update the skill."
-            });
-        }
-
-        if (result.affectedRows === 0) {
-            return res.status(404).render("editSkill", {
-                skill: skill,
-                error: "Skill not found or you do not own this skill."
-            });
-        }
-
-        req.flash("success", "Skill updated successfully.");
-
-        return res.redirect("/my-skills");
-    });
-});
-
-// ===============================================
-// TODO: Create POST /skills/:id/delete — delete the logged-in user’s listing
-app.post("/skills/:id/delete" , checkAuthenticated,(req, res) => {
-    const skillId = Number.parseInt(req.params.id,10);
-
-    const userId = req.session.user.id;
-
-    if(!Number.isInteger(skillId) || skillId <= 0)
-    {
-        req.flash("error", "Invalid skill ID.");
-        return res.redirect("/my-skills");
-}
-    const sql = 'DELETE FROM skills WHERE id =? AND user_id =?';
-
-    // connection.query(sql, values, (err, result) => {
-    connection.query(sql, [skillId, userId], (err, result) => {
-            if (err) {
-                console.error(
-                    "Error deleting skill:",
-                    err
-                );
-                req.flash(
-                    'error',
-                    'Unable to delete the skill.'
-                );
-
-                return res.redirect('/my-skills');
-            }
-
-            if (result.affectedRows === 0) {
-                req.flash(
-                    "error",
-                    "Skill not found or you do not own this listing."
-                );
-
-                return res.redirect("/my-skills");}
-
-                req.flash(
-                    'success',
-                    'Skill deleted successfully.'
-                );
-
-                return res.redirect('/my-skills');
-        });
-    }
-);
 
 /********************************************************************
                     Member 3: MATCHING SYSTEM
@@ -585,15 +175,234 @@ app.post("/skills/:id/delete" , checkAuthenticated,(req, res) => {
 // ===============================================
 // TODO: Filter users by matching skills
 // ===============================================
-/********************************************************************
-                    Member 3: MATCHING SYSTEM
-********************************************************************/
 
-// Convert text to lowercase so skill names can be compared reliably.
+/*
+Normalise matching text so comparisons are not affected by:
+- Uppercase/lowercase
+- Extra spaces
+- Symbols such as /, -, &, or .
+*/
 const normaliseMatchText = (value) => {
-    return String(value || '').trim().toLowerCase();
+    return String(value || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+        .replace(/\s+/g, ' ');
 };
 
+/*
+Convert a skill name into meaningful keywords.
+
+Examples:
+"UI/UX Design" becomes ["ui", "ux", "design"]
+"JavaScript Programming" becomes
+["javascript", "programming"]
+*/
+const getSkillKeywords = (skillName) => {
+    return normaliseMatchText(skillName)
+        .split(' ')
+        .filter((word) => word.length >= 2);
+};
+
+/*
+Check whether two skill names have a partial keyword match.
+
+A partial match is valid when:
+1. One normalised skill name contains the other, or
+2. Every keyword from the shorter skill appears in the longer skill.
+*/
+const hasPartialSkillMatch = (
+    firstSkillName,
+    secondSkillName
+) => {
+    const firstName = normaliseMatchText(firstSkillName);
+    const secondName = normaliseMatchText(secondSkillName);
+    if (!firstName || !secondName || firstName === secondName) {
+        return false;
+    }
+    if (
+        firstName.includes(secondName) ||
+        secondName.includes(firstName)
+    ) {
+        return true;
+    }
+    const firstKeywords = getSkillKeywords(firstName);
+    const secondKeywords = getSkillKeywords(secondName);
+    if (
+        firstKeywords.length === 0 ||
+        secondKeywords.length === 0
+    ) {
+        return false;
+    }
+    const shorterKeywords =
+        firstKeywords.length <= secondKeywords.length
+            ? firstKeywords
+            : secondKeywords;
+    const longerKeywords =
+        firstKeywords.length <= secondKeywords.length
+            ? secondKeywords
+            : firstKeywords;
+    return shorterKeywords.every((keyword) => {
+        return longerKeywords.includes(keyword);
+    });
+};
+
+/*
+Return the strongest skill compatibility only.
+
+Priority:
+1. Exact match: 60%
+2. Partial keyword match: 45%
+3. Same category: 30%
+4. No compatibility: 0%
+*/
+const getSkillCompatibility = (
+    learnSkill,
+    offerSkill
+) => {
+    if (!learnSkill || !offerSkill) {
+        return {
+            score: 0,
+            type: 'No Skill Match',
+            code: 'none'
+        };
+    }
+
+    const learnName = normaliseMatchText(
+        learnSkill.skill_name
+    );
+    const offerName = normaliseMatchText(
+        offerSkill.skill_name
+    );
+
+    if (learnName && learnName === offerName) {
+        return {
+            score: 60,
+            type: 'Exact Match',
+            code: 'exact'
+        };
+    }
+
+    if (
+        hasPartialSkillMatch(
+            learnSkill.skill_name,
+            offerSkill.skill_name
+        )
+    ) {
+        return {
+            score: 45,
+            type: 'Partial Match',
+            code: 'partial'
+        };
+    }
+
+    const learnCategory = normaliseMatchText(
+        learnSkill.category
+    );
+    const offerCategory = normaliseMatchText(
+        offerSkill.category
+    );
+
+    if (
+        learnCategory &&
+        learnCategory === offerCategory
+    ) {
+        return {
+            score: 30,
+            type: 'Category Match',
+            code: 'category'
+        };
+    }
+
+    return {
+        score: 0,
+        type: 'No Skill Match',
+        code: 'none'
+    };
+};
+
+/*
+Find the current user's strongest Learn skill for one
+partner Offer skill.
+*/
+const findBestLearnSkillMatch = (
+    learnSkills,
+    partnerOffer
+) => {
+    let bestResult = {
+        learnSkill: null,
+        compatibility: {
+            score: 0,
+            type: 'No Skill Match',
+            code: 'none'
+        }
+    };
+
+    for (const learnSkill of learnSkills) {
+        const compatibility = getSkillCompatibility(
+            learnSkill,
+            partnerOffer
+        );
+
+        if (
+            compatibility.score >
+            bestResult.compatibility.score
+        ) {
+            bestResult = {
+                learnSkill,
+                compatibility
+            };
+        }
+    }
+
+    return bestResult;
+};
+
+/*
+Reciprocal exchange remains strict.
+
+The +20% is awarded only when the partner wants the exact
+skill currently offered by the logged-in user.
+*/
+const findReciprocalOffer = (
+    myOfferSkills,
+    partnerLearnSkills
+) => {
+    return myOfferSkills.find((myOfferSkill) => {
+        return partnerLearnSkills.some(
+            (partnerLearnSkill) => {
+                return (
+                    normaliseMatchText(
+                        myOfferSkill.skill_name
+                    ) ===
+                    normaliseMatchText(
+                        partnerLearnSkill.skill_name
+                    )
+                );
+            }
+        );
+    }) || null;
+};
+
+/*
+Generate the descriptive label shown on each match card.
+*/
+const getMatchLabel = (percentage) => {
+    if (percentage >= 90) {
+        return 'Excellent Match';
+    }
+    if (percentage >= 75) {
+        return 'Strong Match';
+    }
+    if (percentage >= 60) {
+        return 'Good Match';
+    }
+    if (percentage >= 30) {
+        return 'Potential Match';
+    }
+
+    return 'Selected Skill';
+};
 
 /*
 Compatibility route for Member 2's Match Skill button.
@@ -614,7 +423,6 @@ app.get('/skills/:id', checkAuthenticated, (req, res) => {
 
     return res.redirect(`/matches?skill_id=${skillId}`);
 });
-
 
 /*
 GET /matches
@@ -655,13 +463,18 @@ app.get('/matches', checkAuthenticated, async (req, res) => {
         );
 
         const myOfferSkills = mySkills.filter((skill) => {
-            return normaliseMatchText(skill.skill_type) === 'offer';
+            return (
+                normaliseMatchText(skill.skill_type) ===
+                'offer'
+            );
         });
 
         const myLearnSkills = mySkills.filter((skill) => {
-            return normaliseMatchText(skill.skill_type) === 'learn';
+            return (
+                normaliseMatchText(skill.skill_type) ===
+                'learn'
+            );
         });
-
 
         /*
         Get Offer skills belonging to other users.
@@ -692,7 +505,6 @@ app.get('/matches', checkAuthenticated, async (req, res) => {
                 [currentUserId]
             );
 
-
         /*
         Get the Learn skills belonging to other users.
 
@@ -714,7 +526,6 @@ app.get('/matches', checkAuthenticated, async (req, res) => {
                 [currentUserId]
             );
 
-
         const matches = [];
 
         for (const partnerOffer of otherOfferSkills) {
@@ -727,34 +538,35 @@ app.get('/matches', checkAuthenticated, async (req, res) => {
                 Number(partnerOffer.id) === selectedSkillId;
 
             /*
-            Find whether the current user wants to learn this skill.
+            Find the strongest compatibility between this partner's
+            Offer skill and all the current user's Learn skills.
             */
-            const matchingLearnSkill = myLearnSkills.find(
-                (myLearnSkill) => {
-                    return (
-                        normaliseMatchText(
-                            myLearnSkill.skill_name
-                        ) ===
-                        normaliseMatchText(
-                            partnerOffer.skill_name
-                        )
-                    );
-                }
+            const bestSkillMatch = findBestLearnSkillMatch(
+                myLearnSkills,
+                partnerOffer
             );
 
-            /*
-            Normally, only actual matches are displayed.
+            const matchingLearnSkill =
+                bestSkillMatch.learnSkill;
+            const skillCompatibility =
+                bestSkillMatch.compatibility;
 
-            However, when the user clicks Match Skill from Member 2's
-            skill listing, that selected skill is also displayed.
+            /*
+            Normally, only compatible skills are displayed.
+
+            A skill selected using Member 2's Match Skill button is
+            still displayed even when it is not currently in the
+            user's Learn list.
             */
-            if (!matchingLearnSkill && !selectedFromSkillsPage) {
+            if (
+                skillCompatibility.score === 0 &&
+                !selectedFromSkillsPage
+            ) {
                 continue;
             }
 
-
             /*
-            Find all skills the potential partner wants to learn.
+            Get all Learn skills belonging to this potential partner.
             */
             const partnerLearnSkills = otherLearnSkills.filter(
                 (partnerLearnSkill) => {
@@ -765,31 +577,17 @@ app.get('/matches', checkAuthenticated, async (req, res) => {
                 }
             );
 
-
             /*
-            Check whether the logged-in user offers a skill that
-            the partner wants to learn.
+            Check for a strict reciprocal exchange.
             */
-            const reciprocalOffer = myOfferSkills.find(
-                (myOfferSkill) => {
-                    return partnerLearnSkills.some(
-                        (partnerLearnSkill) => {
-                            return (
-                                normaliseMatchText(
-                                    partnerLearnSkill.skill_name
-                                ) ===
-                                normaliseMatchText(
-                                    myOfferSkill.skill_name
-                                )
-                            );
-                        }
-                    );
-                }
-            ) || null;
-
+            const reciprocalOffer = findReciprocalOffer(
+                myOfferSkills,
+                partnerLearnSkills
+            );
 
             /*
-            Check availability and location.
+            Availability and location are compared against the current
+            user's Learn listing that produced the strongest skill match.
             */
             const availabilityMatches =
                 Boolean(matchingLearnSkill) &&
@@ -817,54 +615,69 @@ app.get('/matches', checkAuthenticated, async (req, res) => {
 
 
             /*
-            Calculate match score.
+            Calculate the final score.
 
-            70%: User wants the skill
-            20%: Reciprocal skill exchange
-             5%: Same availability
-             5%: Same location
+            Only one skill score is used:
+            - Exact: 60
+            - Partial: 45
+            - Category: 30
+
+            Additional factors:
+            - Reciprocal exchange: +20
+            - Availability: +10
+            - Location: +10
             */
-            let matchPercentage = matchingLearnSkill ? 70 : 50;
+            const skillScore = skillCompatibility.score;
 
-            if (reciprocalOffer) {
-                matchPercentage += 20;
-            }
+            const reciprocalScore =
+                reciprocalOffer ? 20 : 0;
 
-            if (availabilityMatches) {
-                matchPercentage += 5;
-            }
+            const availabilityScore =
+                availabilityMatches ? 10 : 0;
 
-            if (locationMatches) {
-                matchPercentage += 5;
-            }
+            const locationScore =
+                locationMatches ? 10 : 0;
 
+            const matchPercentage = Math.min(
+                skillScore +
+                reciprocalScore +
+                availabilityScore +
+                locationScore,
+                100
+            );
 
-            let matchLabel = 'Potential Match';
-
-            if (matchPercentage >= 95) {
-                matchLabel = 'Excellent Match';
-            } else if (matchPercentage >= 85) {
-                matchLabel = 'Strong Match';
-            } else if (matchPercentage >= 70) {
-                matchLabel = 'Good Match';
-            }
+            const matchLabel = getMatchLabel(
+                matchPercentage
+            );
 
 
             matches.push({
                 partner_id: partnerOffer.user_id,
-                partner_name:
-                    partnerOffer.partner_name || 'SkillSwap User',
 
-                requested_skill_id: partnerOffer.id,
+                partner_name:
+                    partnerOffer.partner_name ||
+                    'SkillSwap User',
+
+                requested_skill_id:
+                    partnerOffer.id,
+
                 requested_skill_name:
                     partnerOffer.skill_name,
+
                 requested_skill_level:
                     partnerOffer.skill_level,
 
-                category: partnerOffer.category,
-                description: partnerOffer.description,
-                availability: partnerOffer.availability,
-                location: partnerOffer.location,
+                category:
+                    partnerOffer.category,
+
+                description:
+                    partnerOffer.description,
+
+                availability:
+                    partnerOffer.availability,
+
+                location:
+                    partnerOffer.location,
 
                 reciprocal_offer_id:
                     reciprocalOffer
@@ -876,7 +689,35 @@ app.get('/matches', checkAuthenticated, async (req, res) => {
                         ? reciprocalOffer.skill_name
                         : null,
 
-                user_wants_skill: Boolean(matchingLearnSkill),
+                matched_learn_skill_name:
+                    matchingLearnSkill
+                        ? matchingLearnSkill.skill_name
+                        : null,
+
+                skill_match_type:
+                    selectedFromSkillsPage &&
+                    skillCompatibility.score === 0
+                        ? 'Selected Skill'
+                        : skillCompatibility.type,
+
+                skill_match_code:
+                    skillCompatibility.code,
+
+                skill_score:
+                    skillScore,
+
+                reciprocal_score:
+                    reciprocalScore,
+
+                availability_score:
+                    availabilityScore,
+
+                location_score:
+                    locationScore,
+
+                user_wants_skill:
+                    skillCompatibility.score > 0,
+
                 selected_from_skills_page:
                     selectedFromSkillsPage,
 
@@ -887,11 +728,49 @@ app.get('/matches', checkAuthenticated, async (req, res) => {
                     locationMatches,
 
                 match_percentage:
-                    Math.min(matchPercentage, 100),
+                    matchPercentage,
 
-                match_label: matchLabel
+                match_label:
+                    matchLabel
             });
         }
+
+
+        /*
+        Remove duplicate recommendations.
+
+        A duplicate means the same partner is offering the same
+        normalised skill more than once. The highest-scoring result
+        is kept.
+        */
+        const uniqueMatches = new Map();
+
+        for (const match of matches) {
+            const duplicateKey = [
+                Number(match.partner_id),
+                normaliseMatchText(
+                    match.requested_skill_name
+                )
+            ].join(':');
+
+            const existingMatch =
+                uniqueMatches.get(duplicateKey);
+
+            if (
+                !existingMatch ||
+                match.match_percentage >
+                    existingMatch.match_percentage ||
+                match.selected_from_skills_page
+            ) {
+                uniqueMatches.set(
+                    duplicateKey,
+                    match
+                );
+            }
+        }
+
+        matches.length = 0;
+        matches.push(...uniqueMatches.values());
 
 
         /*
@@ -988,24 +867,30 @@ app.get('/matches', checkAuthenticated, async (req, res) => {
             myLearnSkills,
             incomingRequests,
             outgoingRequests,
+
             selectedSkillId:
                 Number.isInteger(selectedSkillId)
                     ? selectedSkillId
                     : null,
+
             success:
                 req.flash('success')[0] || null,
+
             error:
                 req.flash('error')[0] || null
         });
+
     } catch (error) {
-        console.error('Error loading matches:', error);
+        console.error(
+            'Error loading matches:',
+            error
+        );
 
         return res.status(500).send(
             'Unable to load skill matches. Check the terminal for details.'
         );
     }
 });
-
 
 /*
 POST /matches/request
@@ -1016,8 +901,14 @@ app.post(
     '/matches/request',
     checkAuthenticated,
     async (req, res) => {
-        const learnerId = Number(req.session.user.id);
-        const teacherId = Number(req.body.partner_id);
+        const learnerId = Number(
+            req.session.user.id
+        );
+
+        const teacherId = Number(
+            req.body.partner_id
+        );
+
         const requestedSkillId = Number(
             req.body.requested_skill_id
         );
@@ -1027,7 +918,11 @@ app.post(
             !Number.isInteger(teacherId) ||
             !Number.isInteger(requestedSkillId)
         ) {
-            req.flash('error', 'Invalid exchange request.');
+            req.flash(
+                'error',
+                'Invalid exchange request.'
+            );
+
             return res.redirect('/matches');
         }
 
@@ -1042,17 +937,21 @@ app.post(
 
         try {
             /*
-            Confirm the skill exists, belongs to the selected teacher
-            and is an Offer listing.
+            Confirm the skill exists, belongs to the selected
+            teacher and is an Offer listing.
             */
             const [requestedSkills] =
                 await connection.promise().query(
-                    `SELECT id
+                    `SELECT
+                        id
                      FROM skills
                      WHERE id = ?
                        AND user_id = ?
                        AND LOWER(skill_type) = 'offer'`,
-                    [requestedSkillId, teacherId]
+                    [
+                        requestedSkillId,
+                        teacherId
+                    ]
                 );
 
             if (requestedSkills.length === 0) {
@@ -1070,7 +969,8 @@ app.post(
             */
             const [duplicateRequests] =
                 await connection.promise().query(
-                    `SELECT match_id
+                    `SELECT
+                        match_id
                      FROM matches
                      WHERE learner_id = ?
                        AND teacher_id = ?
@@ -1102,7 +1002,13 @@ app.post(
                         status,
                         matched_at
                     )
-                 VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP)`,
+                 VALUES (
+                    ?,
+                    ?,
+                    ?,
+                    'pending',
+                    CURRENT_TIMESTAMP
+                 )`,
                 [
                     learnerId,
                     teacherId,
@@ -1114,37 +1020,45 @@ app.post(
                 'success',
                 'Skill exchange request sent successfully.'
             );
-
             return res.redirect('/matches');
         } catch (error) {
             console.error(
                 'Error sending exchange request:',
                 error
             );
-
             req.flash(
                 'error',
                 'Unable to send the exchange request.'
             );
-
             return res.redirect('/matches');
         }
     }
 );
 
-
 /*
 POST /matches/request/:id/accept
+
+Allows only the teacher receiving the request to accept it.
 */
 app.post(
     '/matches/request/:id/accept',
     checkAuthenticated,
     async (req, res) => {
-        const matchId = Number(req.params.id);
-        const currentUserId = Number(req.session.user.id);
+        const matchId = Number(
+            req.params.id
+        );
+        const currentUserId = Number(
+            req.session.user.id
+        );
 
-        if (!Number.isInteger(matchId)) {
-            req.flash('error', 'Invalid request ID.');
+        if (
+            !Number.isInteger(matchId) ||
+            matchId <= 0
+        ) {
+            req.flash(
+                'error',
+                'Invalid request ID.'
+            );
             return res.redirect('/matches');
         }
 
@@ -1156,7 +1070,10 @@ app.post(
                      WHERE match_id = ?
                        AND teacher_id = ?
                        AND status = 'pending'`,
-                    [matchId, currentUserId]
+                    [
+                        matchId,
+                        currentUserId
+                    ]
                 );
 
             if (result.affectedRows === 1) {
@@ -1177,30 +1094,39 @@ app.post(
                 'Error accepting request:',
                 error
             );
-
             req.flash(
                 'error',
                 'Unable to accept this request.'
             );
-
             return res.redirect('/matches');
         }
     }
 );
 
-
 /*
 POST /matches/request/:id/reject
+
+Allows only the teacher receiving the request to reject it.
 */
 app.post(
     '/matches/request/:id/reject',
     checkAuthenticated,
     async (req, res) => {
-        const matchId = Number(req.params.id);
-        const currentUserId = Number(req.session.user.id);
+        const matchId = Number(
+            req.params.id
+        );
+        const currentUserId = Number(
+            req.session.user.id
+        );
 
-        if (!Number.isInteger(matchId)) {
-            req.flash('error', 'Invalid request ID.');
+        if (
+            !Number.isInteger(matchId) ||
+            matchId <= 0
+        ) {
+            req.flash(
+                'error',
+                'Invalid request ID.'
+            );
             return res.redirect('/matches');
         }
 
@@ -1212,7 +1138,10 @@ app.post(
                      WHERE match_id = ?
                        AND teacher_id = ?
                        AND status = 'pending'`,
-                    [matchId, currentUserId]
+                    [
+                        matchId,
+                        currentUserId
+                    ]
                 );
 
             if (result.affectedRows === 1) {
@@ -1233,30 +1162,39 @@ app.post(
                 'Error rejecting request:',
                 error
             );
-
             req.flash(
                 'error',
                 'Unable to reject this request.'
             );
-
             return res.redirect('/matches');
         }
     }
 );
 
-
 /*
 POST /matches/request/:id/cancel
+
+Allows only the learner who sent the request to cancel it.
 */
 app.post(
     '/matches/request/:id/cancel',
     checkAuthenticated,
     async (req, res) => {
-        const matchId = Number(req.params.id);
-        const currentUserId = Number(req.session.user.id);
+        const matchId = Number(
+            req.params.id
+        );
+        const currentUserId = Number(
+            req.session.user.id
+        );
 
-        if (!Number.isInteger(matchId)) {
-            req.flash('error', 'Invalid request ID.');
+        if (
+            !Number.isInteger(matchId) ||
+            matchId <= 0
+        ) {
+            req.flash(
+                'error',
+                'Invalid request ID.'
+            );
             return res.redirect('/matches');
         }
 
@@ -1267,7 +1205,10 @@ app.post(
                      WHERE match_id = ?
                        AND learner_id = ?
                        AND status = 'pending'`,
-                    [matchId, currentUserId]
+                    [
+                        matchId,
+                        currentUserId
+                    ]
                 );
 
             if (result.affectedRows === 1) {
@@ -1288,17 +1229,14 @@ app.post(
                 'Error cancelling request:',
                 error
             );
-
             req.flash(
                 'error',
                 'Unable to cancel this request.'
             );
-
             return res.redirect('/matches');
         }
     }
 );
-
 
 /********************************************************************
                     Member 4: GAMIFICATION

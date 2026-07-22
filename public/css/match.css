@@ -957,3 +957,102 @@ body {
         width: 100%;
     }
 }
+
+/* =========================================================
+   MATCH RECOMMENDATION REASONS
+========================================================= */
+
+.match-reasons {
+    margin-top: 18px;
+    padding: 16px 18px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(126, 52, 246, 0.15);
+    border-radius: 14px;
+}
+
+.match-reasons-title {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #382347;
+}
+
+.match-reason-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.match-reason-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    background: #ffffff;
+    border: 1px solid rgba(126, 52, 246, 0.14);
+    border-radius: 999px;
+    color: #40274f;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.match-reason-item i {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    background: #16a36a;
+    color: #ffffff;
+    font-size: 10px;
+}
+
+@media (max-width: 600px) {
+    .match-reason-list {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .match-reason-item {
+        width: 100%;
+        border-radius: 10px;
+    }
+}
+
+/* ==========================================
+   MATCHED LEARN SKILL
+========================================== */
+
+.matched-learn-skill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-top: 14px;
+
+    padding: 10px 16px;
+
+    background: rgba(255,255,255,.65);
+
+    border: 1px solid rgba(126,52,246,.15);
+
+    border-radius: 12px;
+
+    color: #5b21b6;
+
+    font-size: 15px;
+
+    font-weight: 500;
+}
+
+.matched-learn-skill i {
+    color: #7c3aed;
+    font-size: 18px;
+}
+
+.matched-learn-skill strong {
+    color: #3b0764;
+    font-weight: 700;
+}
