@@ -9,16 +9,23 @@
     <title>SkillSwap</title>
 </head>
 <body>
-    <%- include('partials/navbar') %>
     <div class="text-center d-flex align-items-center justify-content-center"
-        style="background-image: url('/images/bg-home.png');background-size: cover;background-position: center;
-        background-repeat: no-repeat; min-height: 90vh;">
+        style="background-image: url('/images/bg-home.png');background-size: relative;background-position: center;
+        background-repeat: no-repeat; min-height: 100vh;">
 
         <div class="row">
             <div class="col-12">
                 <h1 class="fw-bold display-1 mb-3" style="color: #5a32a3;">SkillSwap</h1>
                 <p class="h5 mb-4 text-secondary">Trade Skills. Build Connections. Level Up.</p>
-                <a href="/register" class="btn btn-primary rounded-pill px-4 py-2 fw-bold">Get Started</a>
+                <% if (currentUser) { %>
+                    <a href="/profile" class="btn btn-primary rounded-pill px-4 py-2 fw-bold">
+                        View My Profile
+                    </a>
+                <% } else { %>
+                    <a href="/register" class="btn btn-primary rounded-pill px-4 py-2 fw-bold">
+                        Get Started
+                    </a>
+                <% } %>
             </div>
         </div>
 

@@ -1,15 +1,674 @@
-<!-- ==========================================================
-    MATCHES
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle || 'Skill Matches' %> | SkillSwap</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" >
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" >
+    <link rel="stylesheet" href="/css/match.css">
+    <link rel="stylesheet" href="/css/navbar.css">
+</head>
+<body class="match-page">
+    <%- include('partials/navbar') %>
+    <main class="match-container">
 
-    Team Member:
-    - Wei keat (Matching System)
+        <!-- PAGE HEADER -->
+        <section class="match-header-section">
+            <div>
+                <p class="match-heading-label">
+                    Skill Exchange
+                </p>
 
-    TODO:
-    - Display matching users
-    - Match percentage
-    - Send exchange request
-    - Accept request
-    - Reject request
-========================================================== -->
+                <h1>Find Your Best Match</h1>
 
-<!-- Match Cards -->
+                <p class="match-subtitle">
+                    Connect with people who offer the skills you
+                    want to learn and discover opportunities for
+                    a mutual skill exchange.
+                </p>
+            </div>
+
+            <a href="/skills" class="browse-skills-btn">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Browse Skills
+            </a>
+        </section>
+
+
+        <!-- FLASH MESSAGES -->
+        <% if (success) { %>
+            <div class="match-alert match-alert-success">
+                <i class="fa-solid fa-circle-check"></i>
+                <span><%= success %></span>
+            </div>
+        <% } %>
+
+        <% if (error) { %>
+            <div class="match-alert match-alert-error">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span><%= error %></span>
+            </div>
+        <% } %>
+
+
+        <!-- MY SKILLS SUMMARY -->
+        <section class="skill-summary-grid">
+
+            <article class="skill-summary-card">
+                <div class="summary-icon offer-icon">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+
+                <div class="summary-content">
+                    <h2>Skills I Offer</h2>
+
+                    <p>
+                        Skills that you can teach to other users.
+                    </p>
+
+                    <% if (
+                        myOfferSkills &&
+                        myOfferSkills.length > 0
+                    ) { %>
+
+                        <div class="summary-tags">
+                            <% myOfferSkills.forEach((skill) => { %>
+                                <span class="summary-tag">
+                                    <%= skill.skill_name %>
+                                </span>
+                            <% }) %>
+                        </div>
+
+                    <% } else { %>
+
+                        <p class="summary-empty">
+                            You have not added an Offer skill.
+                        </p>
+
+                        <a
+                            href="/skills/add"
+                            class="summary-link"
+                        >
+                            Add an Offer Skill
+                        </a>
+
+                    <% } %>
+                </div>
+            </article>
+
+
+            <article class="skill-summary-card">
+                <div class="summary-icon learn-icon">
+                    <i class="fa-solid fa-book-open-reader"></i>
+                </div>
+
+                <div class="summary-content">
+                    <h2>Skills I Want to Learn</h2>
+
+                    <p>
+                        Skills that you are currently searching for.
+                    </p>
+
+                    <% if (
+                        myLearnSkills &&
+                        myLearnSkills.length > 0
+                    ) { %>
+
+                        <div class="summary-tags">
+                            <% myLearnSkills.forEach((skill) => { %>
+                                <span class="summary-tag">
+                                    <%= skill.skill_name %>
+                                </span>
+                            <% }) %>
+                        </div>
+
+                    <% } else { %>
+
+                        <p class="summary-empty">
+                            You have not added a Learn skill.
+                        </p>
+
+                        <a
+                            href="/skills/add"
+                            class="summary-link"
+                        >
+                            Add a Learn Skill
+                        </a>
+
+                    <% } %>
+                </div>
+            </article>
+
+        </section>
+
+
+        <!-- SUGGESTED MATCHES -->
+        <section class="match-section">
+
+            <div class="section-heading">
+                <div>
+                    <p class="section-label">
+                        Recommendations
+                    </p>
+
+                    <h2>Suggested Matches</h2>
+
+                    <p>
+                        Matches are based on skills, availability
+                        and location.
+                    </p>
+                </div>
+
+                <span class="section-count">
+                    <%= matches ? matches.length : 0 %>
+                    Match<%= matches && matches.length === 1 ? '' : 'es' %>
+                </span>
+            </div>
+
+
+            <% if (!matches || matches.length === 0) { %>
+
+                <div class="match-empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fa-solid fa-people-arrows"></i>
+                    </div>
+
+                    <h3>No skill matches found yet</h3>
+
+                    <p>
+                        Add a skill that you want to learn, or browse
+                        the available Offer listings to find someone.
+                    </p>
+
+                    <div class="empty-state-buttons">
+                        <a
+                            href="/skills/add"
+                            class="primary-match-btn"
+                        >
+                            <i class="fa-solid fa-plus"></i>
+                            Add a Skill
+                        </a>
+
+                        <a
+                            href="/skills"
+                            class="secondary-match-btn"
+                        >
+                            Browse Skills
+                        </a>
+                    </div>
+                </div>
+
+            <% } else { %>
+
+                <div class="match-grid">
+
+                    <% matches.forEach((match) => { %>
+
+                        <article
+                            class="match-card
+                            <%= match.selected_from_skills_page
+                                ? 'selected-match-card'
+                                : '' %>"
+                        >
+
+                            <% if (
+                                match.selected_from_skills_page
+                            ) { %>
+                                <div class="selected-match-label">
+                                    <i class="fa-solid fa-star"></i>
+                                    Selected Skill
+                                </div>
+                            <% } %>
+
+
+                            <div class="match-card-header">
+
+                                <div class="partner-profile">
+                                    <div class="partner-avatar">
+                                        <%= String(
+                                            match.partner_name || 'U'
+                                        ).charAt(0).toUpperCase() %>
+                                    </div>
+
+                                    <div>
+                                        <h3>
+                                            <%= match.partner_name %>
+                                        </h3>
+
+                                        <p>
+                                            Offers
+                                            <strong>
+                                                <%= match.requested_skill_name %>
+                                            </strong>
+                                        </p>
+                                    </div>
+                                </div>
+
+
+                                <div class="match-score">
+                                    <strong>
+                                        <%= match.match_percentage %>%
+                                    </strong>
+
+                                    <span>Match</span>
+                                </div>
+
+                            </div>
+
+
+                            <div class="match-quality-row">
+                                <span class="match-quality">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    <%= match.match_label %>
+                                </span>
+
+                                <span class="skill-level">
+                                    <%= match.requested_skill_level %>
+                                </span>
+                            </div>
+
+
+                            <p class="match-description">
+                                <%= match.description %>
+                            </p>
+
+
+                            <div class="match-information">
+
+                                <div class="match-info-item">
+                                    <i class="fa-solid fa-layer-group"></i>
+
+                                    <div>
+                                        <span>Category</span>
+                                        <strong>
+                                            <%= match.category %>
+                                        </strong>
+                                    </div>
+                                </div>
+
+
+                                <div class="match-info-item">
+                                    <i class="fa-regular fa-clock"></i>
+
+                                    <div>
+                                        <span>Availability</span>
+                                        <strong>
+                                            <%= match.availability %>
+                                        </strong>
+                                    </div>
+                                </div>
+
+
+                                <div class="match-info-item">
+                                    <i class="fa-solid fa-location-dot"></i>
+
+                                    <div>
+                                        <span>Location</span>
+                                        <strong>
+                                            <%= match.location %>
+                                        </strong>
+                                    </div>
+                                </div>
+
+                            </div>
+
+
+                            <% if (
+                                match.reciprocal_offer_name
+                            ) { %>
+
+                                <div class="reciprocal-box">
+                                    <i class="fa-solid fa-repeat"></i>
+
+                                    <div>
+                                        <span>
+                                            Reciprocal exchange available
+                                        </span>
+
+                                        <strong>
+                                            You can offer
+                                            <%= match.reciprocal_offer_name %>
+                                        </strong>
+                                    </div>
+                                </div>
+
+                            <% } else { %>
+
+                                <div class="reciprocal-box no-reciprocal">
+                                    <i class="fa-solid fa-circle-info"></i>
+
+                                    <div>
+                                        <span>
+                                            One-way learning request
+                                        </span>
+
+                                        <strong>
+                                            No reciprocal skill found
+                                        </strong>
+                                    </div>
+                                </div>
+
+                            <% } %>
+
+
+                            <% if (
+                                match.selected_from_skills_page &&
+                                !match.user_wants_skill
+                            ) { %>
+
+                                <div class="selected-skill-warning">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+
+                                    <span>
+                                        This skill is not listed under
+                                        your Learn skills, but you can
+                                        still send a request.
+                                    </span>
+                                </div>
+
+                            <% } %>
+
+
+                            <form
+                                action="/matches/request"
+                                method="POST"
+                                class="request-match-form"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="partner_id"
+                                    value="<%= match.partner_id %>"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="requested_skill_id"
+                                    value="<%= match.requested_skill_id %>"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="request-match-btn"
+                                >
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                    Send Exchange Request
+                                </button>
+                            </form>
+
+                        </article>
+
+                    <% }) %>
+
+                </div>
+
+            <% } %>
+
+        </section>
+
+
+        <!-- INCOMING REQUESTS -->
+        <section class="match-section">
+
+            <div class="section-heading">
+                <div>
+                    <p class="section-label">
+                        Received
+                    </p>
+
+                    <h2>Incoming Requests</h2>
+
+                    <p>
+                        Requests sent by users who want to learn
+                        one of your skills.
+                    </p>
+                </div>
+
+                <span class="section-count">
+                    <%= incomingRequests
+                        ? incomingRequests.length
+                        : 0 %>
+                </span>
+            </div>
+
+
+            <% if (
+                !incomingRequests ||
+                incomingRequests.length === 0
+            ) { %>
+
+                <div class="request-empty-state">
+                    <i class="fa-regular fa-envelope-open"></i>
+
+                    <div>
+                        <h3>No incoming requests</h3>
+
+                        <p>
+                            New requests will appear here.
+                        </p>
+                    </div>
+                </div>
+
+            <% } else { %>
+
+                <div class="request-list">
+
+                    <% incomingRequests.forEach((request) => { %>
+
+                        <article class="request-card">
+
+                            <div class="request-user">
+
+                                <div class="request-avatar">
+                                    <%= String(
+                                        request.requester_name || 'U'
+                                    ).charAt(0).toUpperCase() %>
+                                </div>
+
+                                <div>
+                                    <h3>
+                                        <%= request.requester_name %>
+                                    </h3>
+
+                                    <p>
+                                        Wants to learn
+                                        <strong>
+                                            <%= request.requested_skill_name %>
+                                        </strong>
+                                    </p>
+                                </div>
+
+                            </div>
+
+
+                            <div class="request-right">
+
+                                <span
+                                    class="request-status
+                                    status-<%= String(
+                                        request.status
+                                    ).toLowerCase() %>"
+                                >
+                                    <%= request.status %>
+                                </span>
+
+
+                                <% if (
+                                    String(
+                                        request.status
+                                    ).toLowerCase() === 'pending'
+                                ) { %>
+
+                                    <div class="request-actions">
+
+                                        <form
+                                            action="/matches/request/<%= request.id %>/accept"
+                                            method="POST"
+                                        >
+                                            <button
+                                                type="submit"
+                                                class="accept-request-btn"
+                                            >
+                                                <i class="fa-solid fa-check"></i>
+                                                Accept
+                                            </button>
+                                        </form>
+
+
+                                        <form
+                                            action="/matches/request/<%= request.id %>/reject"
+                                            method="POST"
+                                        >
+                                            <button
+                                                type="submit"
+                                                class="reject-request-btn"
+                                            >
+                                                <i class="fa-solid fa-xmark"></i>
+                                                Reject
+                                            </button>
+                                        </form>
+
+                                    </div>
+
+                                <% } %>
+
+                            </div>
+
+                        </article>
+
+                    <% }) %>
+
+                </div>
+
+            <% } %>
+
+        </section>
+
+
+        <!-- OUTGOING REQUESTS -->
+        <section class="match-section">
+
+            <div class="section-heading">
+                <div>
+                    <p class="section-label">
+                        Sent
+                    </p>
+
+                    <h2>My Exchange Requests</h2>
+
+                    <p>
+                        Track requests that you have sent to other users.
+                    </p>
+                </div>
+
+                <span class="section-count">
+                    <%= outgoingRequests
+                        ? outgoingRequests.length
+                        : 0 %>
+                </span>
+            </div>
+
+
+            <% if (
+                !outgoingRequests ||
+                outgoingRequests.length === 0
+            ) { %>
+
+                <div class="request-empty-state">
+                    <i class="fa-regular fa-paper-plane"></i>
+
+                    <div>
+                        <h3>No sent requests</h3>
+
+                        <p>
+                            Requests that you send will appear here.
+                        </p>
+                    </div>
+                </div>
+
+            <% } else { %>
+
+                <div class="request-list">
+
+                    <% outgoingRequests.forEach((request) => { %>
+
+                        <article class="request-card">
+
+                            <div class="request-user">
+
+                                <div class="request-avatar">
+                                    <%= String(
+                                        request.partner_name || 'U'
+                                    ).charAt(0).toUpperCase() %>
+                                </div>
+
+                                <div>
+                                    <h3>
+                                        <%= request.partner_name %>
+                                    </h3>
+
+                                    <p>
+                                        Requested
+                                        <strong>
+                                            <%= request.requested_skill_name %>
+                                        </strong>
+                                    </p>
+                                </div>
+
+                            </div>
+
+
+                            <div class="request-right">
+
+                                <span
+                                    class="request-status
+                                    status-<%= String(
+                                        request.status
+                                    ).toLowerCase() %>"
+                                >
+                                    <%= request.status %>
+                                </span>
+
+
+                                <% if (
+                                    String(
+                                        request.status
+                                    ).toLowerCase() === 'pending'
+                                ) { %>
+
+                                    <form
+                                        action="/matches/request/<%= request.id %>/cancel"
+                                        method="POST"
+                                    >
+                                        <button
+                                            type="submit"
+                                            class="cancel-request-btn"
+                                        >
+                                            <i class="fa-solid fa-ban"></i>
+                                            Cancel Request
+                                        </button>
+                                    </form>
+
+                                <% } %>
+
+                            </div>
+
+                        </article>
+
+                    <% }) %>
+
+                </div>
+
+            <% } %>
+
+        </section>
+
+    </main>
+
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    ></script>
+
+</body>
+</html>

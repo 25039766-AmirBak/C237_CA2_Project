@@ -1,34 +1,88 @@
-.navbar {
-  background-color: #2a2140; 
-  padding: 0.5rem 1rem;
+nav.navbar {
+    width: 100%;
+    min-height: 76px;
+    padding: 0.6rem 1rem;
+    background-color: #2a2140;
+    background-image: none;
+    opacity: 1;
+    position: relative;
+    z-index: 1000;
 }
 
-.navbar-brand span {
-  font-size: 1.2rem;
-  color: #fde0fa;
-  letter-spacing: 1px;
+nav.navbar .container-fluid {
+    display: flex;
+    align-items: center;
 }
 
-.navbar-nav .nav-link {
-  color: #cccccc; 
-  margin-right: 15px;
-  transition: color 0.3s ease, border-bottom 0.3s ease;
+nav.navbar .navbar-brand {
+    display: flex;
+    align-items: center;
+    margin: 0;
 }
 
-.navbar-nav .nav-link:hover {
-  color: #ffffff; 
+nav.navbar .navbar-brand span {
+    color: #fde0fa;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
 }
 
-.navbar-nav .nav-link.active {
-  color: #ffffff; 
-  border-bottom: 3px solid #8000ff; 
+nav.navbar .navbar-nav {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
-.navbar-toggler {
-  border: none;
+nav.navbar .navbar-nav .nav-item {
+    display: flex;
+    align-items: center;
 }
 
-.navbar-toggler-icon {
-  filter: invert(1); 
+nav.navbar .navbar-nav .nav-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    margin: 0;
+    padding: 0 8px;
+    border: none;
+    background: transparent;
+    color: #cccccc;
+    font: inherit;
+    line-height: 1;
+    text-decoration: none;
+    opacity: 1;
+    transition: color 0.3s ease;
 }
 
+nav.navbar .navbar-nav .nav-link:hover,
+nav.navbar .navbar-nav .nav-link.active {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+nav.navbar .navbar-nav .nav-link.active::after {
+    content: "";
+    position: absolute;
+    right: 8px;
+    bottom: 2px;
+    left: 8px;
+    height: 3px;
+    border-radius: 3px;
+    background-color: #8000ff;
+}
+
+nav.navbar .logout-button {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+nav.navbar .navbar-toggler {
+    border: none;
+}
+
+nav.navbar .navbar-toggler-icon {
+    filter: invert(1);
+}

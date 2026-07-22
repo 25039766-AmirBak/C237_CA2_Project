@@ -1,42 +1,79 @@
 <nav class="navbar navbar-expand-sm navbar-dark shadow-sm">
-    <div class="container-fluid ">
+    <div class="container-fluid">
 
         <a class="navbar-brand d-flex align-items-center" href="/">
-            <img src="/images/logo.png" alt="Logo" style="height:50px; width:50px;" class="rounded-pill ms-2 me-3">
-            <span >SKILLSWAP </span>  
-        </a>    
+            <img src="/images/logo.png" alt="Logo" class="rounded-pill ms-2 me-3" style="height: 50px; width: 50px;">
+            <span>SKILLSWAP</span>
+        </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
+        <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#collapsibleNavbar"
+            aria-controls="collapsibleNavbar"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+        >
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="collapse navbar-collapse justify-content-end" id="collapsibleNavbar">
+        <div
+            class="collapse navbar-collapse justify-content-end"
+            id="collapsibleNavbar">
             <ul class="navbar-nav">
-    
-            <li class="nav-item">
-                <a class="nav-link p-3" href="/skills">Skills</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link p-3" href="/matches">Matches</a>   
 
-            <li class="nav-item">
-                <a class="nav-link p-3" href="/messages">Messages</a>
+                <li class="nav-item">
+                    <a class="nav-link" href="/skills"> Skills </a>
+                </li>
 
-            <li class="nav-item">
-                <a class="nav-link p-3" href="/schedule">Schedule</a> 
-            
-            <li class="nav-item">
-                <a class="nav-link p-3" href="/badges">Badges</a> 
+                <% if (currentUser) { %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/matches"> Matches</a>
+                    </li>
 
-            <li class="nav-item">
-                <a class="nav-link p-3" href="/profile">Profile</a> 
+                    <li class="nav-item">
+                        <a class="nav-link" href="/badges"> Badges </a>
+                    </li>
 
-        
+                    <li class="nav-item">
+                        <a class="nav-link p-3" href="/messages">Messages</a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link p-3" href="/schedule">Schedule</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/profile"> Profile</a>
+                    </li>
+
+                    <% if (currentUser.role === 'admin') { %>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin"> Dashboard</a>
+                        </li>
+                    <% } %>
+
+                    <li class="nav-item">
+                        <form action="/logout" method="POST" class="m-0">
+                            <button type="submit" class="nav-link logout-button" >Logout</button>
+                        </form>
+                    </li>
+
+                <% } else { %>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login"> Login</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link navbar-register-link" href="/register"> Register
+                        </a>
+                    </li>
+
+                <% } %>
+
             </ul>
         </div>
     </div>
 </nav>
-
-
-</body>
-</html>

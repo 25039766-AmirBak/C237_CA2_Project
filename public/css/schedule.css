@@ -1,0 +1,149 @@
+:root {
+  --ss-navy: #2b1d46;
+  --ss-purple: #6f3fcf;
+  --ss-violet: #9b6df0;
+  --ss-blue: #1684ff;
+  --ss-pink-bg: #f8efff;
+  --ss-card: rgba(255, 255, 255, 0.88);
+  --ss-text: #2d2440;
+  --ss-muted: #7e748d;
+  --ss-border: #eadff5;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ss-text);
+  font-family: "Inter", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at 12% 15%, rgba(190, 146, 255, 0.20), transparent 27%),
+    radial-gradient(circle at 90% 12%, rgba(240, 190, 255, 0.22), transparent 28%),
+    linear-gradient(135deg, #fffaff 0%, #f8efff 52%, #f1e9ff 100%);
+  background-attachment: fixed;
+}
+
+.container.py-4 {
+  max-width: 1240px;
+  padding-top: 48px;
+  padding-bottom: 70px;
+}
+
+h3,
+h4 {
+  color: var(--ss-navy);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+h3 {
+  font-size: clamp(2rem, 4vw, 2.8rem);
+}
+
+h4 {
+  margin-top: 8px;
+  font-size: 1.6rem;
+}
+
+.row.mb-5 {
+  min-height: 190px;
+}
+
+.card {
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(111, 63, 207, 0.12);
+  border-radius: 22px;
+  background: var(--ss-card);
+  box-shadow: 0 16px 35px rgba(77, 45, 119, 0.10);
+  backdrop-filter: blur(14px);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.card::before {
+  content: "";
+  display: block;
+  height: 6px;
+  background: linear-gradient(90deg, var(--ss-purple), var(--ss-violet), var(--ss-blue));
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 22px 42px rgba(77, 45, 119, 0.16);
+}
+
+.card-body {
+  padding: 24px;
+}
+
+.card-title {
+  color: var(--ss-navy);
+  font-size: 1.18rem;
+  font-weight: 800;
+}
+
+.card-text {
+  color: var(--ss-muted);
+  line-height: 1.55;
+}
+
+.card-text strong {
+  color: var(--ss-purple);
+}
+
+.btn-outline-danger {
+  margin-top: 10px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+form.row.g-3 {
+  padding: 28px;
+  border: 1px solid rgba(111, 63, 207, 0.12);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 20px 48px rgba(77, 45, 119, 0.11);
+  backdrop-filter: blur(16px);
+}
+
+.form-label {
+  color: var(--ss-navy);
+  font-weight: 700;
+}
+
+.form-control,
+.form-select {
+  min-height: 48px;
+  border: 1px solid var(--ss-border);
+  border-radius: 14px;
+  color: var(--ss-text);
+  background-color: #fff;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--ss-violet);
+  box-shadow: 0 0 0 0.22rem rgba(155, 109, 240, 0.15);
+}
+
+.btn-primary {
+  padding: 12px 24px;
+  border: 0;
+  border-radius: 14px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--ss-purple), var(--ss-blue));
+  box-shadow: 0 12px 24px rgba(55, 84, 219, 0.22);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #6033c2, #0877ec);
+}
+
+.alert {
+  border: 0;
+  border-radius: 14px;
+}
+
+.text-muted {
+  color: var(--ss-muted) ;
+}
