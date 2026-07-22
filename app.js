@@ -21,7 +21,7 @@ const connection = mysql.createConnection({
     host: 'c237-adib-mysql.mysql.database.azure.com',
     user: 'c237_026',
     password: 'c237026@2026!',
-    database: 'c237_026_team4_userdb',
+    database: 'c237_026_team4_skillexcdb',
     ssl:{
         rejectUnauthorized:false
     }
@@ -178,7 +178,7 @@ app.get("/", (req, res) => {
 //Award XP to user and triggers level up check
 function awardXP(userId, amount) {
     connection.query(
-        'UPDATE users SET xp = COALESCE(xp, 0) + ? WHERE id = ?',
+        'UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?',
         [amount, userId],
         (err) => {
             if (err) {
@@ -193,14 +193,14 @@ function awardXP(userId, amount) {
 //Level Up check: triggers if have enough XP
 function checkLevelUp(userId) {
     connection.query(
-        'SELECT xp, level FROM users WHERE id = ?',
+        'SELECT points, level FROM users WHERE id = ?',
         [userId],
         (err, results) => {
             if (err || results.length === 0) {
                 console.error('Error checking level:', err);
                 return;
             }
-            const xp = results[0].xp || 0;
+            const xp = results[0].points || 0;
             const level = results[0].level || 1;
             if (xp >= level * 100) {
                 connection.query(
@@ -258,19 +258,20 @@ function checkAndAwardBadges(userId) {
 // ===============================================
 
 //Protected route, queries user XP, level, exchange stuff & earned badges before routing to badges.ejs
+
 //TEMPORARY FIX: comment out checkAuthenticated & hardcode userId=1 for testing without login
 //Remove this block and restore the original line when login is ready
 const testUserId = 1;
 app.get('/badges', /*checkAuthenticated,*/ (req, res) => {
     const userId = req.session.user ? req.session.user.id : testUserId;
-    
-    connection.query('SELECT xp, level FROM users WHERE id = ?', [userId], (err, userRows) => {
+
+    connection.query('SELECT points, level FROM users WHERE id = ?', [userId], (err, userRows) => {
         if (err || userRows.length === 0) {
             req.flash('error', 'User not found');
             return res.redirect('/');
         }
 
-        const xp = userRows[0].xp || 0;
+        const xp = userRows[0].points || 0;
         const level = userRows[0].level || 1;
         const xpForNextLevel = level * 100;
 
