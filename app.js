@@ -18,10 +18,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'RP738964$',
-    database: 'skillswap_db',
+    host: 'c237-adib-mysql.mysql.database.azure.com',
+    user: 'c237_026',
+    password: 'c237026@2026!',
+    database: 'c237_026_team4_skillexcdb',
+    ssl:{
+        rejectUnauthorized:false
+    }
   });
 
 
@@ -229,7 +232,7 @@ app.get("/skills", (req, res) => {
     const skillType = req.query.skill_type ? req.query.skill_type.trim() : "";
     const sort = req.query.sort ? req.query.sort.trim() : "newest";
 
-    let sql = ' SELECT skills.id,skills.user_id,skills.skill_name,skills.category,skills.skill_level,skills.skill_type,skills.description, skills.availability,skills.location,skills.created_at,users.name AS owner_name,users.profile_picture AS owner_picture FROM skills INNER JOIN users ON skills.user_id = users.id WHERE 1=1';
+    let sql = ' SELECT skills.id,skills.user_id,skills.skill_name,skills.category,skills.skill_level,skills.skill_type,skills.description, skills.availability,skills.location,skills.created_at,users.name AS owner_name FROM skills INNER JOIN users ON skills.user_id = users.id WHERE 1=1';
 
     const values =[];
     if (keyword !== "") {
