@@ -24,6 +24,7 @@ const connection = mysql.createConnection({
     database: 'skillswap_db',
   });
 
+
 connection.connect((err) => {
     if (err) {
         console.error('Error connecting to MySQL:', err);
@@ -606,27 +607,6 @@ app.post("/skills/:id/delete" , checkAuthenticated,(req, res) => {
 /********************************************************************
                    Member 5: CHAT & SCHEDULING
 ********************************************************************/
-
-// ===============================================
-// TODO: Create messaging system
-// ===============================================
-
-
-// ===============================================
-// TODO: Store chat messages
-// ===============================================
-
-
-// ===============================================
-// TODO: Schedule learning sessions
-// ===============================================
-
-
-// ===============================================
-// TODO: Prevent overlapping bookings
-// ===============================================
-
-
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

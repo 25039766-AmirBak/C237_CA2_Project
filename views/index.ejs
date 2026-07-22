@@ -1,18 +1,3 @@
-<!-- ==========================================================
-    Homepage
-    Purpose:
-    - Main landing page after login
-
-    Shared Page
-
-    TODO:
-    - Display welcome message
-    - Show quick statistics
-    - Show XP progress
-    - Display recommended skills
-    - Display upcoming sessions
-========================================================== -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,22 +10,18 @@
 </head>
 <body>
     <%- include('partials/navbar') %>
-    <div class="thumbnail text-center text-white d-flex align-items-center justify-content-center"  
-        style = "background-image:url('/images/welcome.png') ; 
-            background-size: cover; 
-            background-position: center; 
-            height: 90vh;">
+    <div class="text-center d-flex align-items-center justify-content-center"
+        style="background: #FAE6FA; min-height: 90vh;">
 
-    <div class ="row">
-        <div class="col-md-6 d-flex flex-column align-items-start ps-5">
-            <h1 class="col-md-6 d-flex flex-column align-items-start ps-5 fw-bold display-4"> 
-            Trade Skills. 
-            Build Connections.
-            Level Up.</h1>
+        <div class="row">
+            <div class="col-12">
+                <h1 class="fw-bold display-1 mb-3" style="color: #5a32a3;">SkillSwap</h1>
+                <p class="h5 mb-4 text-secondary">Trade Skills. Build Connections. Level Up.</p>
+                <a href="/register" class="btn btn-primary rounded-pill px-4 py-2 fw-bold">Get Started</a>
+            </div>
+        </div>
+
     </div>
-
-    
-        
 </body>
 </html>
 
