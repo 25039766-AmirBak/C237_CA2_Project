@@ -185,6 +185,10 @@ Normalise matching text so comparisons are not affected by:
 const normaliseMatchText = (value) => {
     return String(value || '')
         .toLowerCase()
+        .replace(/c\+\+/g, 'cplusplus')
+        .replace(/c#/g, 'csharp')
+        .replace(/\.net/g, ' dotnet')
+        .replace(/node\.js/g, 'nodejs')
         .replace(/[^a-z0-9]+/g, ' ')
         .trim()
         .replace(/\s+/g, ' ');
@@ -208,8 +212,14 @@ const getSkillKeywords = (skillName) => {
 Check whether two skill names have a partial keyword match.
 
 A partial match is valid when:
-1. One normalised skill name contains the other, or
-2. Every keyword from the shorter skill appears in the longer skill.
+1. The skill names are not an exact match.
+2. Every keyword from the shorter skill name appears as a
+   complete keyword in the longer skill name.
+
+Examples:
+"UI" ↔ "UI/UX Design"
+"JavaScript" ↔ "JavaScript Programming"
+"UX Design" ↔ "UI/UX Design"
 */
 const hasPartialSkillMatch = (
     firstSkillName,
@@ -217,34 +227,34 @@ const hasPartialSkillMatch = (
 ) => {
     const firstName = normaliseMatchText(firstSkillName);
     const secondName = normaliseMatchText(secondSkillName);
+
     if (!firstName || !secondName || firstName === secondName) {
         return false;
     }
-    if (
-        firstName.includes(secondName) ||
-        secondName.includes(firstName)
-    ) {
-        return true;
-    }
+
     const firstKeywords = getSkillKeywords(firstName);
     const secondKeywords = getSkillKeywords(secondName);
+
     if (
         firstKeywords.length === 0 ||
         secondKeywords.length === 0
     ) {
         return false;
     }
+
     const shorterKeywords =
         firstKeywords.length <= secondKeywords.length
             ? firstKeywords
             : secondKeywords;
+
     const longerKeywords =
         firstKeywords.length <= secondKeywords.length
             ? secondKeywords
             : firstKeywords;
-    return shorterKeywords.every((keyword) => {
-        return longerKeywords.includes(keyword);
-    });
+
+    return shorterKeywords.every((keyword) =>
+        longerKeywords.includes(keyword)
+    );
 };
 
 /*
@@ -382,6 +392,33 @@ const findReciprocalOffer = (
             }
         );
     }) || null;
+};
+
+/*
+Flexible availability matches every availability option.
+
+Examples:
+Flexible ↔ Weekdays
+Flexible ↔ Weekends
+Flexible ↔ Evenings
+Flexible ↔ Flexible
+*/
+const availabilityIsCompatible = (
+    firstAvailability,
+    secondAvailability
+) => {
+    const first = normaliseMatchText(firstAvailability);
+    const second = normaliseMatchText(secondAvailability);
+
+    if (!first || !second) {
+        return false;
+    }
+
+    return (
+        first === second ||
+        first === 'flexible' ||
+        second === 'flexible'
+    );
 };
 
 /*
@@ -591,13 +628,8 @@ app.get('/matches', checkAuthenticated, async (req, res) => {
             */
             const availabilityMatches =
                 Boolean(matchingLearnSkill) &&
-                normaliseMatchText(
-                    matchingLearnSkill.availability
-                ) !== '' &&
-                normaliseMatchText(
-                    matchingLearnSkill.availability
-                ) ===
-                normaliseMatchText(
+                availabilityIsCompatible(
+                    matchingLearnSkill.availability,
                     partnerOffer.availability
                 );
 
