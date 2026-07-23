@@ -61,8 +61,27 @@
                 </p>
 
                 <p class="card-text">Status:  
-                    <span class="badge bg-secondary"><%= session.status %></span>
+                    <span class="badge <%=
+                        session.status === 'Confirmed' ? 'bg-success' :
+                        session.status === 'Pending' ? 'bg-warning text-dark' :
+                        session.status === 'Cancelled' ? 'bg-secondary' :
+                        session.status === 'Rejected' ? 'bg-danger' : 'bg-secondary'
+                    %>"><%= session.status %></span>
                 </p>
+
+                <% if (
+                    session.status === 'Pending' &&
+                    Number(session.teacher_id) === Number(user.id)
+                ) { %>
+                    <div class="d-flex gap-2 mb-2">
+                        <form method="POST" action="/schedule/<%= session.session_id %>/accept">
+                            <button type="submit" class="btn btn-success btn-sm">Confirm</button>
+                        </form>
+                        <form method="POST" action="/schedule/<%= session.session_id %>/reject">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Decline</button>
+                        </form>
+                    </div>
+                <% } %>
 
                 <% if (
                     String(session.status).toLowerCase() !==

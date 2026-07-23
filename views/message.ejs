@@ -30,7 +30,7 @@
                     <% conversations.forEach(function(c) { %>
                         <a href="/messages?with=<%= c.id %>"
                            class="list-group-item list-group-item-action <%= (partner && partner.id === c.id) ? 'active' : '' %>">
-                            <%= c.username %>
+                            <%= c.name %>
                         </a>
                     <% }) %>
                     <% if (conversations.length === 0) { %>
@@ -44,7 +44,7 @@
                         <option value="">Select a user...</option>
                         <% allUsers.forEach(function(u) { %>
                             <option value="<%= u.id %>" <%= (partner && partner.id === u.id) ? 'selected' : '' %>>
-                                <%= u.username %>
+                                <%= u.name %>
                             </option>
                         <% }) %>
                     </select>
@@ -54,16 +54,16 @@
             <!-- Chat Window -->
             <div class="col-md-8">
                 <% if (partner) { %>
-                    <h5 class="mb-3">Chat with <%= partner.username %></h5>
+                    <h5 class="mb-3">Chat with <%= partner.name %></h5>
 
                     <div class="border rounded p-3 mb-3" style="height: 400px; overflow-y: auto;">
                         <% thread.forEach(function(m) { %>
                             <div class="mb-2 <%= m.sender_id == partner.id ? 'text-start' : 'text-end' %>">
                                 <span class="badge <%= m.sender_id == partner.id ? 'bg-secondary' : 'bg-primary' %>">
-                                    <%= m.sender_username %>
+                                    <%= m.sender_name %>
                                 </span>
-                                <div><%= m.message_text %></div>
-                                <small class="text-muted"><%= new Date(m.created_at).toLocaleString('en-SG') %></small>
+                                <div><%= m.content %></div>
+                                <small class="text-muted"><%= new Date(m.sent_at).toLocaleString('en-SG') %></small>
                             </div>
                         <% }) %>
                         <% if (thread.length === 0) { %>
@@ -73,7 +73,7 @@
 
                     <form method="POST" action="/chat/send" class="d-flex gap-2">
                         <input type="hidden" name="receiver_id" value="<%= partner.id %>">
-                        <input type="text" name="message_text" class="form-control" placeholder="Type a message..." required>
+                        <input type="text" name="content" class="form-control" placeholder="Type a message..." required>
                         <button type="submit" class="btn btn-primary">Send</button>
                     </form>
                 <% } else { %>
