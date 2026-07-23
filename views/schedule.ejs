@@ -64,6 +64,7 @@
                     <span class="badge <%=
                         session.status === 'Confirmed' ? 'bg-success' :
                         session.status === 'Pending' ? 'bg-warning text-dark' :
+                        session.status === 'Completed' ? 'bg-primary' :
                         session.status === 'Cancelled' ? 'bg-secondary' :
                         session.status === 'Rejected' ? 'bg-danger' : 'bg-secondary'
                     %>"><%= session.status %></span>
@@ -84,8 +85,16 @@
                 <% } %>
 
                 <% if (
-                    String(session.status).toLowerCase() !==
-                    'cancelled'
+                    session.status === 'Confirmed' &&
+                    Number(session.teacher_id) === Number(user.id)
+                ) { %>
+                    <form method="POST" action="/schedule/<%= session.session_id %>/complete" onsubmit="return confirm('Mark this session as completed?');">
+                        <button type="submit" class="btn btn-success btn-sm">Complete</button>
+                    </form>
+                <% } %>
+                    //Validation to ensure that prevents cancellation of sessions that are already cancelled, completed or rejected.
+                <% if (
+                    !['cancelled', 'completed', 'rejected'].includes(String(session.status).toLowerCase())
                 ) { %>
                     <form method="POST" action="/schedule/cancel/<%= session.session_id %>" onsubmit="return confirm('Cancel this session?');">
                         <button type="submit" class="btn btn-outline-danger btn-sm" > Cancel </button>

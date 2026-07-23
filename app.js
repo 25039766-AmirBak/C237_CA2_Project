@@ -2311,7 +2311,7 @@ function awardBadge(userId, badgeName) {
 //Checks exchange history & completion, awarding badges to both learner & teacher if completed
 function checkAndAwardBadges(userId) {
     connection.query(
-        'SELECT COUNT(*) AS total FROM matches WHERE (learner_id = ? OR teacher_id = ?) AND status = "completed"',
+        'SELECT COUNT(*) AS total FROM sessions WHERE (learner_id = ? OR teacher_id = ?) AND status = "completed"',
         [userId, userId],
         (err, result) => {
             if (err) return;
@@ -2323,7 +2323,7 @@ function checkAndAwardBadges(userId) {
         }
     );
     connection.query(
-        'SELECT COUNT(*) AS count FROM matches WHERE teacher_id = ? AND status = "completed"',
+        'SELECT COUNT(*) AS count FROM sessions WHERE teacher_id = ? AND status = "completed"',
         [userId],
         (err, result) => {
             if (err) return;
@@ -2357,13 +2357,13 @@ app.get('/badges', checkAuthenticated, (req, res) => {
         const xpForNextLevel = level * 100;
 
         connection.query(
-            'SELECT COUNT(*) AS total FROM matches WHERE (learner_id = ? OR teacher_id = ?) AND status = "completed"',
+            'SELECT COUNT(*) AS total FROM sessions WHERE (learner_id = ? OR teacher_id = ?) AND status = "completed"',
             [userId, userId],
             (err, exchangeRows) => {
                 const totalExchanges = exchangeRows ? exchangeRows[0].total : 0;
 
                 connection.query(
-                    'SELECT COUNT(*) AS count FROM matches WHERE teacher_id = ? AND status = "completed"',
+                    'SELECT COUNT(*) AS count FROM sessions WHERE teacher_id = ? AND status = "completed"',
                     [userId],
                     (err, teacherRows) => {
                         const teacherExchanges = teacherRows ? teacherRows[0].count : 0;
@@ -2953,6 +2953,74 @@ app.post(
     }
 );
 
+// POST /schedule/:id/complete - only the teacher can mark a Confirmed
+// session as Completed, which triggers gamification rewards
+app.post(
+    '/schedule/:id/complete',
+    checkAuthenticated,
+    async (req, res) => {
+        const currentUserId = Number(req.session.user.id);
+        const sessionId = Number.parseInt(req.params.id, 10);
+
+        // Validate that the session ID is a positive integer
+        if (!Number.isInteger(sessionId) || sessionId <= 0) {
+            req.flash('error', 'Invalid session.');
+            return res.redirect('/schedule');
+        }
+
+        try {
+            // Verify the session exists, belongs to the current teacher, and is 'Confirmed' (only Confirmed sessions can be completed)
+            const [sessions] = await db.query(
+                `
+                SELECT learner_id, teacher_id
+                FROM sessions
+                WHERE session_id = ?
+                  AND teacher_id = ?
+                  AND status = 'Confirmed'
+                LIMIT 1
+                `,
+                [sessionId, currentUserId]
+            );
+
+            // If no matching session found, reject the request
+            if (sessions.length === 0) {
+                req.flash('error', 'This session cannot be completed.');
+                return res.redirect('/schedule');
+            }
+
+            // Extract both participant IDs for gamification rewards
+            const learnerId = Number(sessions[0].learner_id);
+            const teacherId = Number(sessions[0].teacher_id);
+
+            // Update the session status to 'Completed'
+            await db.query(
+                `
+                UPDATE sessions
+                SET status = 'Completed'
+                WHERE session_id = ?
+                `,
+                [sessionId]
+            );
+
+            // GAMIFICATION: Award 100 XP to both learner and teacher.
+            // awardXP() adds points and triggers checkLevelUp() which promotes the user if they have enough XP for the next level.
+            awardXP(learnerId, 100);
+            awardXP(teacherId, 100);
+
+            // GAMIFICATION: Check and award badges for both users.
+            // checkAndAwardBadges() counts completed sessions and grants badges like 'First Trade', 'Skill Master', 'Community Hero', and 'Top Teacher' based on the user's exchange history.
+            checkAndAwardBadges(learnerId);
+            checkAndAwardBadges(teacherId);
+
+            req.flash('success', 'Session marked as completed.');
+            return res.redirect('/schedule');
+        } catch (error) {
+            console.error('Complete session error:', error);
+            req.flash('error', 'Unable to complete the session.');
+            return res.redirect('/schedule');
+        }
+    }
+);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
