@@ -248,13 +248,14 @@
                                 <div class="match-reason-list">
                                     <span class="match-reason-item">
                                         <i class="fa-solid fa-check"></i>
-                                        <%= match.skill_match_type %>
+                                        <% if (match.skill_match_type === 'Exact Match') { %>
+                                            Exact Skill Match
+                                        <% else if (match.skill_match_type === 'Partial Match') { %>
+                                            Partial Skill Match
+                                        <% else {%>
+                                            Same Cateogry
+                                        <% } { %>
                                     </span>
-                                    <% if (match.reciprocal_offer_name) { %>
-                                        <span class="match-reason-item">
-                                            <i class="fa-solid fa-check"></i>
-                                            Reciprocal exchange
-                                        </span>
                                     <% } %>
                                     <% if (match.availability_matches) { %>
                                         <span class="match-reason-item">
