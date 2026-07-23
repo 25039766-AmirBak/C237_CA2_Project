@@ -11,47 +11,26 @@
 </head>
 
 <body class="admin-page">
-
     <%- include('partials/navbar') %>
 
     <main class="admin-wrapper">
-
         <section class="admin-header">
-
             <div>
-                <p class="admin-eyebrow">
-                    SkillSwap Management
-                </p>
-
-                <h1>
-                    Admin Dashboard
-                </h1>
-
-                <p class="admin-subtitle">
-                    View platform statistics, users and skill listings.
-                </p>
+                <p class="admin-eyebrow"> SkillSwap Management</p>
+                <h1>Admin Dashboard</h1>
+                <p class="admin-subtitle">View platform statistics, users and skill listings.</p>
             </div>
 
             <div class="admin-account">
-
                 <div class="admin-avatar">
-                    <%= String(currentUser.name || 'A')
-                        .charAt(0)
-                        .toUpperCase() %>
+                    <%= String(currentUser.name || 'A').charAt(0).toUpperCase() %>
                 </div>
 
                 <div>
-                    <strong>
-                        <%= currentUser.name %>
-                    </strong>
-
-                    <span>
-                        Administrator
-                    </span>
+                    <strong><%= currentUser.name %></strong>
+                    <span>Administrator</span>
                 </div>
-
             </div>
-
         </section>
 
         <% if (
@@ -60,11 +39,8 @@
         ) { %>
 
             <% successMessages.forEach((message) => { %>
-                <div class="alert alert-success">
-                    <%= message %>
-                </div>
+                <div class="alert alert-success"><%= message %></div>
             <% }) %>
-
         <% } %>
 
         <% if (
@@ -73,15 +49,11 @@
         ) { %>
 
             <% errorMessages.forEach((message) => { %>
-                <div class="alert alert-danger">
-                    <%= message %>
-                </div>
+                <div class="alert alert-danger"><%= message %></div>
             <% }) %>
-
         <% } %>
 
         <section class="statistics-grid">
-
             <article class="statistics-card">
 
                 <div class="statistics-icon users-icon">
@@ -89,15 +61,9 @@
                 </div>
 
                 <div>
-                    <span>
-                        Total Users
-                    </span>
-
-                    <strong>
-                        <%= statistics.totalUsers %>
-                    </strong>
+                    <span>Total Users</span>
+                    <strong><%= statistics.totalUsers %></strong>
                 </div>
-
             </article>
 
             <article class="statistics-card">
@@ -107,15 +73,9 @@
                 </div>
 
                 <div>
-                    <span>
-                        Total Skills
-                    </span>
-
-                    <strong>
-                        <%= statistics.totalSkills %>
-                    </strong>
+                    <span>Total Skills</span>
+                    <strong><%= statistics.totalSkills %></strong>
                 </div>
-
             </article>
 
             <article class="statistics-card">
@@ -125,13 +85,8 @@
                 </div>
 
                 <div>
-                    <span>
-                        Total Matches
-                    </span>
-
-                    <strong>
-                        <%= statistics.totalMatches %>
-                    </strong>
+                    <span>Total Matches</span>
+                    <strong><%= statistics.totalMatches %></strong>
                 </div>
 
             </article>
@@ -143,43 +98,26 @@
                 </div>
 
                 <div>
-                    <span>
-                        Total Sessions
-                    </span>
-
-                    <strong>
-                        <%= statistics.totalSessions %>
-                    </strong>
+                    <span>Total Sessions</span>
+                    <strong><%= statistics.totalSessions %></strong>
                 </div>
 
             </article>
-
         </section>
 
         <section class="admin-panel">
-
             <div class="panel-heading">
 
                 <div>
-                    <p class="panel-label">
-                        User Management
-                    </p>
-
-                    <h2>
-                        Registered Users
-                    </h2>
+                    <p class="panel-label">User Management</p>
+                    <h2>Registered Users</h2>
                 </div>
-
-                <span class="record-count">
-                    <%= users.length %> records
-                </span>
-
+                <span class="record-count"><%= users.length %> records</span>
             </div>
 
             <div class="table-responsive">
 
                 <table class="table admin-table align-middle">
-
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -193,50 +131,25 @@
                     </thead>
 
                     <tbody>
-
                         <% if (users.length === 0) { %>
 
                             <tr>
-                                <td
-                                    colspan="7"
-                                    class="text-center text-muted py-5"
-                                >
-                                    No users found.
-                                </td>
+                                <td colspan="7" class="text-center text-muted py-5"> No users found.</td>
                             </tr>
-
                         <% } %>
 
                         <% users.forEach((user) => { %>
-
                             <tr>
-
+                                <td>#<%= user.id %></td>
                                 <td>
-                                    #<%= user.id %>
-                                </td>
-
-                                <td>
-
                                     <div class="table-user">
-
-                                        <div class="small-avatar">
-                                            <%= String(user.name || 'U')
-                                                .charAt(0)
-                                                .toUpperCase() %>
-                                        </div>
+                                        <div class="small-avatar"><%= String(user.name || 'U').charAt(0).toUpperCase() %></div>
 
                                         <div>
-                                            <strong>
-                                                <%= user.name %>
-                                            </strong>
-
-                                            <span>
-                                                <%= user.email %>
-                                            </span>
+                                            <strong><%= user.name %></strong>
+                                            <span><%= user.email %></span>
                                         </div>
-
                                     </div>
-
                                 </td>
 
                                 <td>
@@ -244,16 +157,9 @@
                                 </td>
 
                                 <td>
-
                                     <span
-                                        class="role-badge
-                                        <%= String(user.role).toLowerCase() === 'admin'
-                                            ? 'admin-role'
-                                            : 'user-role' %>"
-                                    >
-                                        <%= user.role || 'user' %>
+                                        class="role-badge<%= String(user.role).toLowerCase() === 'admin'? 'admin-role': 'user-role' %>"><%= user.role || 'user' %>
                                     </span>
-
                                 </td>
 
                                 <td>
@@ -265,46 +171,27 @@
                                 </td>
 
                                 <td>
-                                    <%= user.created_at
-                                        ? new Date(user.created_at)
-                                            .toLocaleDateString('en-SG')
-                                        : 'Not available' %>
+                                    <%= user.created_at? new Date(user.created_at).toLocaleDateString('en-SG'): 'Not available' %>
                                 </td>
-
                             </tr>
-
                         <% }) %>
 
                     </tbody>
-
                 </table>
-
             </div>
-
         </section>
 
         <section class="admin-panel">
-
             <div class="panel-heading">
 
                 <div>
-                    <p class="panel-label">
-                        Content Management
-                    </p>
-
-                    <h2>
-                        Recent Skill Listings
-                    </h2>
+                    <p class="panel-label">Content Management</p>
+                    <h2>Recent Skill Listings</h2>
                 </div>
-
-                <span class="record-count">
-                    <%= skills.length %> records
-                </span>
-
+                <span class="record-count"><%= skills.length %> records</span>
             </div>
 
             <div class="table-responsive">
-
                 <table class="table admin-table align-middle">
 
                     <thead>
@@ -321,49 +208,25 @@
                     </thead>
 
                     <tbody>
-
                         <% if (skills.length === 0) { %>
-
                             <tr>
-                                <td
-                                    colspan="8"
-                                    class="text-center text-muted py-5"
-                                >
-                                    No skills found.
-                                </td>
+                                <td colspan="8" class="text-center text-muted py-5">No skills found.</td>
                             </tr>
-
                         <% } %>
 
                         <% skills.forEach((skill) => { %>
-
                             <tr>
-
                                 <td>
                                     #<%= skill.id %>
                                 </td>
-
                                 <td>
-
                                     <div class="skill-table-name">
+                                        <strong><%= skill.skill_name %></strong>
 
-                                        <strong>
-                                            <%= skill.skill_name %>
-                                        </strong>
-
-                                        <span>
-                                            <%= skill.description
-                                                ? skill.description.substring(0, 70)
-                                                : 'No description' %>
-
-                                            <%= skill.description &&
-                                                skill.description.length > 70
-                                                ? '...'
-                                                : '' %>
+                                        <span><%= skill.description? skill.description.substring(0, 70): 'No description' %>
+                                            <%= skill.description &&skill.description.length > 70? '...': '' %>
                                         </span>
-
                                     </div>
-
                                 </td>
 
                                 <td>
@@ -379,57 +242,29 @@
                                 </td>
 
                                 <td>
-
-                                    <span
-                                        class="skill-type-badge
-                                        <%= String(skill.skill_type).toLowerCase() === 'offer'
-                                            ? 'offer-type'
-                                            : 'learn-type' %>"
-                                    >
-                                        <%= skill.skill_type %>
+                                    <span class="skill-type-badge <%= String(skill.skill_type).toLowerCase() === 'offer' ? 'offer-type': 'learn-type' %>"
+                                    ><%= skill.skill_type %>
                                     </span>
-
                                 </td>
 
                                 <td>
-                                    <%= skill.created_at
-                                        ? new Date(skill.created_at)
-                                            .toLocaleDateString('en-SG')
-                                        : 'Not available' %>
+                                    <%= skill.created_at ? new Date(skill.created_at).toLocaleDateString('en-SG'): 'Not available' %>
                                 </td>
 
                                 <td>
-
-                                    <form
-                                        action="/admin/skills/<%= skill.id %>/delete"
-                                        method="POST"
-                                        onsubmit="return confirm('Delete this skill listing?');"
-                                    >
-
-                                        <button
-                                            type="submit"
-                                            class="btn btn-sm btn-outline-danger"
-                                        >
+                                    <form action="/admin/skills/<%= skill.id %>/delete" method="POST" onsubmit="return confirm('Delete this skill listing?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
                                             <i class="fa-solid fa-trash"></i>
                                             Delete
                                         </button>
-
                                     </form>
-
                                 </td>
-
                             </tr>
-
                         <% }) %>
-
                     </tbody>
-
                 </table>
-
             </div>
-
         </section>
-
     </main>
 
 </body>

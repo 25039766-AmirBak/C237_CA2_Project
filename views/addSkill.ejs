@@ -27,7 +27,6 @@
 
         <form action="/skills/add" method="POST" class="skill-form">
 
-            <!-- Skill Name -->
             <div class="form-group">
                 <label>Skill Name</label>
 
@@ -36,7 +35,6 @@
                 required>
             </div>
 
-            <!-- Category -->
             <div class="form-group">
                 <label>Category</label>
 
@@ -96,7 +94,6 @@
                 </select>
             </div>
 
-            <!-- Description -->
             <div class="form-group">
                 <label>Description</label>
 
@@ -105,8 +102,6 @@
                 ><%= typeof formData !== "undefined" && formData.description ? formData.description : "" %></textarea>
             </div>
 
-
-            <!-- Availability -->
             <div class="form-group">
                 <label>Availability</label>
 
@@ -120,8 +115,6 @@
                 </select>
             </div>
 
-
-            <!-- Location -->
             <div class="form-group">
                 <label>Location</label>
 
@@ -130,7 +123,6 @@
                 required>
             </div>
 
-            <!-- Buttons -->
             <div class="button-group">
 
                 <a href="/skills" class="cancel-btn">Cancel</a>

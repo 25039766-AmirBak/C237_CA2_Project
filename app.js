@@ -92,22 +92,6 @@ const checkAdmin = (req, res, next) => {
     return res.redirect('/');
 };
 
-// // Middleware for form validation
-// const validateRegistration = (req, res, next) => {
-//     const { username, email, password, contact, role } = req.body;
-
-//     if (!username || !email || !password || !contact || !role) {
-//         return res.status(400).send('All fields are required.');
-//     }
-    
-//     if (password.length < 6) {
-//         req.flash('error', 'Password should be at least 6 or more characters long');
-//         req.flash('formData', req.body);
-//         return res.redirect('/register');
-//     }
-//     next();
-// };
-
 app.use((req, res, next) => {
     res.locals.currentUser = req.session.user || null;
     res.locals.successMessages = req.flash('success');
@@ -130,12 +114,6 @@ app.get("/", (req, res) => {
 /********************************************************************
                     Mmeber 1 :USER REGISTRATION
 ********************************************************************/
-/*
-|--------------------------------------------------------------------------
-| Registration helpers
-|--------------------------------------------------------------------------
-*/
-
 const getRegistrationData = (body = {}) => {
     return {
         name: body.name ? body.name.trim() : '',
@@ -191,13 +169,6 @@ const validateRegistrationData = (
     return null;
 };
 
-
-/*
-|--------------------------------------------------------------------------
-| GET /register
-|--------------------------------------------------------------------------
-*/
-
 app.get('/register', checkGuest, (req, res) => {
     return res.render('register', {
         pageTitle: 'Register',
@@ -206,26 +177,13 @@ app.get('/register', checkGuest, (req, res) => {
     });
 });
 
-
-/*
-|--------------------------------------------------------------------------
-| POST /register
-|--------------------------------------------------------------------------
-*/
-
 app.post('/register', checkGuest, async (req, res) => {
     console.log(req.body);
 
     const formData = getRegistrationData(req.body);
     const password = req.body.password || '';
-    const confirmPassword =
-        req.body.confirm_password || '';
-
-    const validationError = validateRegistrationData(
-        formData,
-        password,
-        confirmPassword
-    );
+    const confirmPassword = req.body.confirm_password || '';
+    const validationError = validateRegistrationData(formData,password,confirmPassword);
 
     if (validationError) {
         return res.status(400).render('register', {
@@ -238,13 +196,7 @@ app.post('/register', checkGuest, async (req, res) => {
     try {
         const [existingUsers] =
             await connection.promise().query(
-                `
-                SELECT id
-                FROM users
-                WHERE email = ?
-                LIMIT 1
-                `,
-                [formData.email]
+                ' SELECT id FROM users WHERE email = ? LIMIT 1',[formData.email]
             );
 
         if (existingUsers.length > 0) {
@@ -256,32 +208,13 @@ app.post('/register', checkGuest, async (req, res) => {
             });
         }
 
-        const hashedPassword = await bcrypt.hash(
-            password,
-            12
-        );
+        const hashedPassword = await bcrypt.hash(password,12);
 
-        const role =
-            formData.email.toLowerCase() === 'admin@gmail.com'
-            ? 'admin'
-            : 'user';
+        const role = formData.email.toLowerCase() === 'admin@gmail.com' ? 'admin' : 'user';
 
         const [result] =
             await connection.promise().query(
-                `
-                INSERT INTO users
-                (
-                    name,
-                    email,
-                    password,
-                    contact,
-                    bio,
-                    role,
-                    points,
-                    level
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                `,
+                'INSERT INTO users (name,email,password,contact,bio,role,points,level) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     formData.name,
                     formData.email,
@@ -303,10 +236,7 @@ app.post('/register', checkGuest, async (req, res) => {
 
         return req.session.save((sessionError) => {
             if (sessionError) {
-                console.error(
-                    'Unable to save registration session:',
-                    sessionError
-                );
+                console.error('Unable to save registration session:',sessionError);
 
                 return res.status(500).render(
                     'register',
@@ -318,9 +248,9 @@ app.post('/register', checkGuest, async (req, res) => {
                     }
                 );
             }
-
             return res.redirect('/profile');
         });
+
     } catch (error) {
         console.error('Registration error:', error);
 
@@ -342,13 +272,6 @@ app.post('/register', checkGuest, async (req, res) => {
     }
 });
 
-
-/*
-|--------------------------------------------------------------------------
-| GET /login
-|--------------------------------------------------------------------------
-*/
-
 app.get('/login', checkGuest, (req, res) => {
     return res.render('login', {
         pageTitle: 'Login',
@@ -358,23 +281,10 @@ app.get('/login', checkGuest, (req, res) => {
     });
 });
 
-
-/*
-|--------------------------------------------------------------------------
-| POST /login
-|--------------------------------------------------------------------------
-*/
-
 app.post('/login', checkGuest, async (req, res) => {
-    const email = req.body.email
-        ? req.body.email.trim().toLowerCase()
-        : '';
-
+    const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
     const password = req.body.password || '';
-
-    const formData = {
-        email
-    };
+    const formData = {email};
 
     if (!email || !password) {
         return res.status(400).render('login', {
@@ -389,18 +299,7 @@ app.post('/login', checkGuest, async (req, res) => {
     try {
         const [users] =
             await connection.promise().query(
-                `
-                SELECT
-                    id,
-                    name,
-                    email,
-                    password,
-                    role
-                FROM users
-                WHERE email = ?
-                LIMIT 1
-                `,
-                [email]
+                ' SELECT id, name, email, password, role FROM users WHERE email = ? LIMIT 1',[email]
             );
 
         if (users.length === 0) {
@@ -415,12 +314,7 @@ app.post('/login', checkGuest, async (req, res) => {
 
         const user = users[0];
 
-        const passwordMatches =
-            await bcrypt.compare(
-                password,
-                user.password
-            );
-
+        const passwordMatches = await bcrypt.compare( password,user.password);
         if (!passwordMatches) {
             return res.status(401).render('login', {
                 pageTitle: 'Login',
@@ -434,10 +328,7 @@ app.post('/login', checkGuest, async (req, res) => {
         return req.session.regenerate(
             (regenerateError) => {
                 if (regenerateError) {
-                    console.error(
-                        'Unable to regenerate session:',
-                        regenerateError
-                    );
+                    console.error('Unable to regenerate session:',regenerateError);
 
                     return res.status(500).render(
                         'login',
@@ -504,23 +395,10 @@ app.post('/login', checkGuest, async (req, res) => {
     }
 });
 
-
-/*
-|--------------------------------------------------------------------------
-| POST /logout
-|--------------------------------------------------------------------------
-*/
-
-app.post(
-    '/logout',
-    checkAuthenticated,
-    (req, res) => {
-        req.session.destroy((error) => {
+app.post('/logout',checkAuthenticated,(req, res) => {
+    req.session.destroy((error) => {
             if (error) {
-                console.error(
-                    'Logout error:',
-                    error
-                );
+                console.error('Logout error:',error);
 
                 return res
                     .status(500)
@@ -535,12 +413,6 @@ app.post(
 );
 
 
-/*
-|--------------------------------------------------------------------------
-| GET /profile
-|--------------------------------------------------------------------------
-*/
-
 app.get(
     '/profile',
     checkAuthenticated,
@@ -550,21 +422,7 @@ app.get(
         try {
             const [users] =
                 await connection.promise().query(
-                    `
-                    SELECT
-                        id,
-                        name,
-                        email,
-                        contact,
-                        bio,
-                        role,
-                        points,
-                        level
-                    FROM users
-                    WHERE id = ?
-                    LIMIT 1
-                    `,
-                    [userId]
+                    ' SELECT id, name, email,contact, bio,role,points,level FROM users WHERE id = ? LIMIT 1',[userId]
                 );
 
             if (users.length === 0) {
@@ -575,22 +433,7 @@ app.get(
 
             const [skills] =
                 await connection.promise().query(
-                    `
-                    SELECT
-                        id,
-                        skill_name,
-                        category,
-                        skill_level,
-                        skill_type,
-                        description,
-                        availability,
-                        location,
-                        created_at
-                    FROM skills
-                    WHERE user_id = ?
-                    ORDER BY created_at DESC
-                    `,
-                    [userId]
+                    ' SELECT id, skill_name, category, skill_level, skill_type, description,availability,location,created_at FROM skills WHERE user_id = ? ORDER BY created_at DESC',[userId]
                 );
 
             const offerSkills = skills.filter(
@@ -643,35 +486,11 @@ app.get(
     }
 );
 
-
-/*
-|--------------------------------------------------------------------------
-| GET /profile/edit
-|--------------------------------------------------------------------------
-*/
-
-app.get(
-    '/profile/edit',
-    checkAuthenticated,
-    async (req, res) => {
+app.get('/profile/edit',checkAuthenticated,async (req, res) => {
         try {
             const [users] =
                 await connection.promise().query(
-                    `
-                    SELECT
-                        id,
-                        name,
-                        email,
-                        contact,
-                        bio,
-                        role,
-                        points,
-                        level
-                    FROM users
-                    WHERE id = ?
-                    LIMIT 1
-                    `,
-                    [req.session.user.id]
+                    ' SELECT id, name,email,contact,bio,role,points,level FROM users WHERE id = ? LIMIT 1',[req.session.user.id]
                 );
 
             if (users.length === 0) {
@@ -692,9 +511,7 @@ app.get(
                     null
             });
         } catch (error) {
-            console.error(
-                'Edit profile page error:',
-                error
+            console.error('Edit profile page error:',error
             );
 
             return res
@@ -706,62 +523,36 @@ app.get(
     }
 );
 
-
-/*
-|--------------------------------------------------------------------------
-| POST /profile/edit
-|--------------------------------------------------------------------------
-*/
-
-app.post(
-    '/profile/edit',
-    checkAuthenticated,
-    async (req, res) => {
+app.post('/profile/edit',checkAuthenticated, async (req, res) => {
         const userId = req.session.user.id;
+        const name = req.body.name ? req.body.name.trim() : '';
+        const contact = req.body.contact ? req.body.contact.trim() : '';
 
-        const name = req.body.name
-            ? req.body.name.trim()
-            : '';
-
-        const contact = req.body.contact
-            ? req.body.contact.trim()
-            : '';
-
-        const bio = req.body.bio
-            ? req.body.bio.trim()
-            : '';
+        const bio = req.body.bio ? req.body.bio.trim() : '';
 
         if (!name || !contact) {
-            req.flash(
-                'error',
-                'Name and contact number are required.'
+            req.flash('error', 'Name and contact number are required.'
             );
 
             return res.redirect('/profile/edit');
         }
 
         if (name.length > 100) {
-            req.flash(
-                'error',
-                'Name cannot exceed 100 characters.'
+            req.flash('error', 'Name cannot exceed 100 characters.'
             );
 
             return res.redirect('/profile/edit');
         }
 
         if (contact.length > 30) {
-            req.flash(
-                'error',
-                'Contact number cannot exceed 30 characters.'
+            req.flash('error', 'Contact number cannot exceed 30 characters.'
             );
 
             return res.redirect('/profile/edit');
         }
 
         if (bio.length > 500) {
-            req.flash(
-                'error',
-                'Bio cannot exceed 500 characters.'
+            req.flash('error', 'Bio cannot exceed 500 characters.'
             );
 
             return res.redirect('/profile/edit');
@@ -770,13 +561,7 @@ app.post(
         try {
             const [users] =
                 await connection.promise().query(
-                    `
-                    SELECT id
-                    FROM users
-                    WHERE id = ?
-                    LIMIT 1
-                    `,
-                    [userId]
+                    'SELECT id FROM users WHERE id = ? LIMIT 1',[userId]
                 );
 
             if (users.length === 0) {
@@ -804,9 +589,7 @@ app.post(
 
             req.session.user.name = name;
 
-            req.flash(
-                'success',
-                'Profile updated successfully.'
+            req.flash('success','Profile updated successfully.'
             );
 
             return req.session.save(
@@ -822,29 +605,18 @@ app.post(
                 }
             );
         } catch (error) {
-            console.error(
-                'Profile update error:',
-                error
+            console.error('Profile update error:',error
             );
 
-            req.flash(
-                'error',
-                'Unable to update your profile.'
+            req.flash('error','Unable to update your profile.'
             );
 
             return res.redirect('/profile/edit');
         }
     }
 );
-/********************************************************************
-                    ADMIN DASHBOARD
-********************************************************************/
 
-app.get(
-    '/admin',
-    checkAuthenticated,
-    checkAdmin,
-    async (req, res) => {
+app.get('/admin',checkAuthenticated,checkAdmin,async (req, res) => {
         try {
             const [
                 userCountRows,
@@ -939,14 +711,10 @@ app.get(
                 skills
             });
         } catch (error) {
-            console.error(
-                'Admin dashboard error:',
-                error
+            console.error('Admin dashboard error:',error
             );
 
-            req.flash(
-                'error',
-                'Unable to load the admin dashboard.'
+            req.flash('error','Unable to load the admin dashboard.'
             );
 
             return res.redirect('/');
@@ -954,23 +722,13 @@ app.get(
     }
 );
 
-app.post(
-    '/admin/skills/:id/delete',
-    checkAuthenticated,
-    checkAdmin,
-    async (req, res) => {
-        const skillId = Number.parseInt(
-            req.params.id,
-            10
-        );
+app.post('/admin/skills/:id/delete',checkAuthenticated,checkAdmin,async (req, res) => {
+        const skillId = Number.parseInt(req.params.id,10);
 
         if (
-            !Number.isInteger(skillId) ||
-            skillId <= 0
+            !Number.isInteger(skillId) ||skillId <= 0
         ) {
-            req.flash(
-                'error',
-                'Invalid skill ID.'
+            req.flash('error','Invalid skill ID.'
             );
 
             return res.redirect('/admin');
@@ -978,35 +736,24 @@ app.post(
 
         try {
             const [result] = await db.query(
-                `
-                DELETE FROM skills
-                WHERE id = ?
-                `,
+                ` DELETE FROM skills WHERE id = ?`,
                 [skillId]
             );
 
             if (result.affectedRows === 0) {
-                req.flash(
-                    'error',
-                    'Skill listing not found.'
+                req.flash('error','Skill listing not found.'
                 );
             } else {
-                req.flash(
-                    'success',
-                    'Skill listing deleted successfully.'
+                req.flash('success','Skill listing deleted successfully.'
                 );
             }
 
             return res.redirect('/admin');
         } catch (error) {
-            console.error(
-                'Admin delete skill error:',
-                error
+            console.error('Admin delete skill error:',error
             );
 
-            req.flash(
-                'error',
-                'Unable to delete the skill. It may be linked to a match or session.'
+            req.flash('error','Unable to delete the skill. It may be linked to a match or session.'
             );
 
             return res.redirect('/admin');
@@ -1073,13 +820,6 @@ const validateSkill = (skill) => {
         skill.skill_name.length > 100
     ) {
         return 'Skill name must be between 2 and 100 characters.';
-    }
-
-    if (
-        skill.description.length < 10 ||
-        skill.description.length > 1000
-    ) {
-        return 'Description must be between 10 and 1000 characters.';
     }
 
     if (skill.location.length > 100) {

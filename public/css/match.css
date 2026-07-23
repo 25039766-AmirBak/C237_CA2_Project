@@ -76,36 +76,6 @@ body {
     line-height: 1.7;
 }
 
-.browse-skills-btn {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    gap: 9px;
-    min-height: 46px;
-    padding: 12px 21px;
-    border: 1px solid rgba(168, 85, 247, 0.55);
-    border-radius: 8px;
-    background: linear-gradient(135deg, #7c3aed, #5b21b6);
-    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.23);
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    white-space: nowrap;
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease,
-        background 0.2s ease;
-}
-
-.browse-skills-btn:hover {
-    color: #ffffff;
-    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-    box-shadow: 0 11px 28px rgba(124, 58, 237, 0.35);
-    transform: translateY(-2px);
-}
-
-
 /* =========================================
    Alerts
    ========================================= */
