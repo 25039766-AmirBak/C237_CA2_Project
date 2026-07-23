@@ -52,12 +52,12 @@
 
         <div class="row">
             <div class="col-md-4 mb-3">
-                <div class="card h-100 <%= earnedBadges.includes('First Trade') ? 'border-success' : 'opacity-50' %>">
+                <div class="card h-100 <%= earnedBadges.includes('First Step') ? 'border-success' : 'opacity-50' %>">
                     <div class="card-body text-center">
-                        <div style="font-size: 3rem;">&#127942;</div>
-                        <h5 class="card-title mt-2">First Trade</h5>
+                        <img src="/images/first_step.png" alt="First Step" style="height: 64px;">
+                        <h5 class="card-title mt-2">First Step</h5>
                         <p class="card-text">Complete your first skill exchange</p>
-                        <% if (earnedBadges.includes('First Trade')) { %>
+                        <% if (earnedBadges.includes('First Step')) { %>
                             <span class="badge bg-success fs-6">Earned</span>
                         <% } else { %>
                             <span class="badge bg-secondary fs-6">Locked</span>
@@ -73,9 +73,30 @@
             </div>
 
             <div class="col-md-4 mb-3">
+                <div class="card h-100 <%= earnedBadges.includes('Active Learner') ? 'border-success' : 'opacity-50' %>">
+                    <div class="card-body text-center">
+                        <img src="/images/active_learner.png" alt="Active Learner" style="height: 64px;">
+                        <h5 class="card-title mt-2">Active Learner</h5>
+                        <p class="card-text">Complete 5 skill exchanges</p>
+                        <% if (earnedBadges.includes('Active Learner')) { %>
+                            <span class="badge bg-success fs-6">Earned</span>
+                        <% } else { %>
+                            <span class="badge bg-secondary fs-6">Locked</span>
+                            <div class="mt-2">
+                                <small>Progress: <%= Math.min(totalExchanges, 5) %> / 5</small>
+                                <div class="progress mt-1" style="height: 8px;">
+                                    <div class="progress-bar" data-width="<%= ((totalExchanges / 5) * 100) + '%' %>"></div>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
                 <div class="card h-100 <%= earnedBadges.includes('Top Teacher') ? 'border-success' : 'opacity-50' %>">
                     <div class="card-body text-center">
-                        <div style="font-size: 3rem;">&#128218;</div>
+                        <img src="/images/top_teacher.png" alt="Top Teacher" style="height: 64px;">
                         <h5 class="card-title mt-2">Top Teacher</h5>
                         <p class="card-text">Teach 5 skills to other users</p>
                         <% if (earnedBadges.includes('Top Teacher')) { %>
@@ -96,7 +117,7 @@
             <div class="col-md-4 mb-3">
                 <div class="card h-100 <%= earnedBadges.includes('Skill Master') ? 'border-success' : 'opacity-50' %>">
                     <div class="card-body text-center">
-                        <div style="font-size: 3rem;">&#127919;</div>
+                        <img src="/images/skill_master.png" alt="Skill Master" style="height: 64px;">
                         <h5 class="card-title mt-2">Skill Master</h5>
                         <p class="card-text">Complete 10 skill exchanges</p>
                         <% if (earnedBadges.includes('Skill Master')) { %>
@@ -107,6 +128,27 @@
                                 <small>Progress: <%= Math.min(totalExchanges, 10) %> / 10</small>
                                 <div class="progress mt-1" style="height: 8px;">
                                     <div class="progress-bar" data-width="<%= ((totalExchanges / 10) * 100) + '%' %>"></div>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 <%= earnedBadges.includes('Community Hero') ? 'border-success' : 'opacity-50' %>">
+                    <div class="card-body text-center">
+                        <img src="/images/community_hero.png" alt="Community Hero" style="height: 64px;">
+                        <h5 class="card-title mt-2">Community Hero</h5>
+                        <p class="card-text">Complete 20 skill exchanges</p>
+                        <% if (earnedBadges.includes('Community Hero')) { %>
+                            <span class="badge bg-success fs-6">Earned</span>
+                        <% } else { %>
+                            <span class="badge bg-secondary fs-6">Locked</span>
+                            <div class="mt-2">
+                                <small>Progress: <%= Math.min(totalExchanges, 20) %> / 20</small>
+                                <div class="progress mt-1" style="height: 8px;">
+                                    <div class="progress-bar" data-width="<%= ((totalExchanges / 20) * 100) + '%' %>"></div>
                                 </div>
                             </div>
                         <% } %>

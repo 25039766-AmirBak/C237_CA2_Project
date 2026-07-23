@@ -239,8 +239,10 @@ function checkAndAwardBadges(userId) {
         (err, result) => {
             if (err) return;
             const total = result[0].total;
-            if (total >= 1) awardBadge(userId, 'First Trade');
+            if (total >= 1) awardBadge(userId, 'First Step');
+            if (total >= 5) awardBadge(userId, 'Active Learner');
             if (total >= 10) awardBadge(userId, 'Skill Master');
+            if (total >= 20) awardBadge(userId, 'Community Hero');
         }
     );
     connection.query(
@@ -258,15 +260,17 @@ function checkAndAwardBadges(userId) {
 // ===============================================
 
 //Protected route, queries user XP, level, exchange stuff & earned badges before routing to badges.ejs
-
-//TEMPORARY FIX: comment out checkAuthenticated & hardcode userId=1 for testing without login
-//Remove this block and restore the original line when login is ready
-const testUserId = 1;
-app.get('/badges', /*checkAuthenticated,*/ (req, res) => {
-    const userId = req.session.user ? req.session.user.id : testUserId;
+app.get('/badges', checkAuthenticated, (req, res) => {
+    const userId = req.session.user.id;
 
     connection.query('SELECT points, level FROM users WHERE id = ?', [userId], (err, userRows) => {
-        if (err || userRows.length === 0) {
+        if (err) {
+            console.error('Badges query error:', err.sqlMessage || err);
+            req.flash('error', 'User not found');
+            return res.redirect('/');
+        }
+        if (userRows.length === 0) {
+            console.error('No user found with id:', userId);
             req.flash('error', 'User not found');
             return res.redirect('/');
         }
