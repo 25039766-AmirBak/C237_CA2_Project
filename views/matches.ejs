@@ -261,7 +261,13 @@
                                 <div class="match-reason-list">
                                     <span class="match-reason-item">
                                         <i class="fa-solid fa-check"></i>
-                                        <%= match.skill_match_type %>
+                                        <%=
+                                            match.skill_match_type === 'Exact Match'
+                                                ? 'Exact Skill Match'
+                                                : match.skill_match_type === 'Partial Match'
+                                                ? 'Partial Skill Match'
+                                                : 'Same Category'
+                                        %>
                                     </span>
                                     <% if (match.reciprocal_offer_name) { %>
                                         <span class="match-reason-item">
