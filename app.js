@@ -2291,18 +2291,32 @@ function checkLevelUp(userId) {
 
 //Check if badge already earned, then insert if not
 function awardBadge(userId, badgeName) {
+    // First look up the badge_id from the badges table
     connection.query(
-        'SELECT id FROM user_badges WHERE user_id = ? AND badge_name = ?',
-        [userId, badgeName],
-        (err, rows) => {
-            if (err) {
-                console.error('Error checking badge:', err);
+        'SELECT badge_id FROM badges WHERE badge_name = ?',
+        [badgeName],
+        (err, badgeRows) => {
+            if (err || badgeRows.length === 0) {
+                if (err) console.error('Error finding badge:', err);
                 return;
             }
-            if (rows.length > 0) return;
+            const badgeId = badgeRows[0].badge_id;
+            // Then check if this badge is already earned
             connection.query(
-                'INSERT INTO user_badges (user_id, badge_name) VALUES (?, ?)',
-                [userId, badgeName]
+                'SELECT user_badge_id FROM user_badges WHERE user_id = ? AND badge_id = ?',
+                [userId, badgeId],
+                (err, rows) => {
+                    if (err) {
+                        console.error('Error checking badge:', err);
+                        return;
+                    }
+                    if (rows.length > 0) return;
+                    // Insert using the foreign key badge_id
+                    connection.query(
+                        'INSERT INTO user_badges (user_id, badge_id) VALUES (?, ?)',
+                        [userId, badgeId]
+                    );
+                }
             );
         }
     );
@@ -2316,8 +2330,8 @@ function checkAndAwardBadges(userId) {
         (err, result) => {
             if (err) return;
             const total = result[0].total;
-            if (total >= 1) awardBadge(userId, 'First Trade');
-            if (total >= 10) awardBadge(userId, 'Skill Master');
+            if (total >= 1) awardBadge(userId, 'First Step');
+            if (total >= 5) awardBadge(userId, 'Active Learner');
             if (total >= 10) awardBadge(userId, 'Skill Master');
             if (total >= 20) awardBadge(userId, 'Community Hero');
         }
@@ -2369,7 +2383,7 @@ app.get('/badges', checkAuthenticated, (req, res) => {
                         const teacherExchanges = teacherRows ? teacherRows[0].count : 0;
 
                         connection.query(
-                            'SELECT badge_name FROM user_badges WHERE user_id = ?',
+                            'SELECT badges.badge_name FROM user_badges INNER JOIN badges ON badges.badge_id = user_badges.badge_id WHERE user_badges.user_id = ?',
                             [userId],
                             (err, badgeRows) => {
                                 const earnedBadges = badgeRows ? badgeRows.map(b => b.badge_name) : [];
