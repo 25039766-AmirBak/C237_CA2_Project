@@ -250,13 +250,12 @@
                                         <i class="fa-solid fa-check"></i>
                                         <% if (match.skill_match_type === 'Exact Match') { %>
                                             Exact Skill Match
-                                        <% else if (match.skill_match_type === 'Partial Match') { %>
+                                        <% } else if (match.skill_match_type === 'Partial Match') { %>
                                             Partial Skill Match
-                                        <% else {%>
-                                            Same Cateogry
-                                        <% } { %>
+                                        <% } else { %>
+                                            Same Category
+                                        <% } %>
                                     </span>
-                                    <% } %>
                                     <% if (match.availability_matches) { %>
                                         <span class="match-reason-item">
                                             <i class="fa-solid fa-check"></i>
