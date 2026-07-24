@@ -456,3 +456,54 @@ textarea.form-control {
     color: #747888;
 }
 
+
+/* ============================================================
+   Member 1: password strength meter (register.ejs)
+============================================================ */
+
+.strength-meter {
+    margin-top: 8px;
+}
+
+.strength-track {
+    height: 7px;
+    margin-bottom: 4px;
+    border-radius: 999px;
+    background: #e9ecf3;
+    overflow: hidden;
+}
+
+.strength-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 999px;
+    background: #dc3545;
+    transition: width 0.25s ease, background 0.25s ease;
+}
+
+.strength-checklist {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.82rem;
+    color: #86899a;
+}
+
+.strength-checklist li {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 3px;
+}
+
+.strength-checklist li i {
+    color: #c2c6d4;
+}
+
+.strength-checklist li.check-passed {
+    color: #198754;
+}
+
+.strength-checklist li.check-passed i {
+    color: #198754;
+}
