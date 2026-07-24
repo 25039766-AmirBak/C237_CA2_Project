@@ -4,6 +4,8 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const multer = require('multer');
 const bcrypt = require('bcrypt');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 
@@ -112,509 +114,612 @@ app.get("/", (req, res) => {
 
 
 /********************************************************************
-                    Mmeber 1 :USER REGISTRATION
+                    Member 1 :USER REGISTRATION & PROFILES
 ********************************************************************/
-const getRegistrationData = (body = {}) => {
-    return {
-        name: body.name ? body.name.trim() : '',
-        email: body.email
-            ? body.email.trim().toLowerCase()
-            : '',
-        contact: body.contact ? body.contact.trim() : '',
-        bio: body.bio ? body.bio.trim() : ''
-    };
-};
 
-const validateRegistrationData = (
-    formData,
-    password,
-    confirmPassword
-) => {
-    if (
-        !formData.name ||
-        !formData.email ||
-        !password ||
-        !confirmPassword ||
-        !formData.contact
-    ) {
-        return 'Please complete all required fields.';
+/*
+Profile pictures are stored as files named by user ID
+(e.g. public/images/profile-7.jpg), so no database column is
+needed. Uploads are held in memory and written after we know the
+user's ID. Only images up to 2MB are accepted.
+*/
+const PROFILE_PICTURE_DIR = path.join(__dirname, 'public', 'images');
+const PROFILE_PICTURE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+const getProfilePictureFilename = (userId) => {
+    for (const ext of PROFILE_PICTURE_EXTENSIONS) {
+        const filename = `profile-${userId}.${ext}`;
+        if (fs.existsSync(path.join(PROFILE_PICTURE_DIR, filename))) {
+            return filename;
+        }
     }
-
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailPattern.test(formData.email)) {
-        return 'Please enter a valid email address.';
-    }
-
-    if (password.length < 6) {
-        return 'Password must contain at least 6 characters.';
-    }
-
-    if (password !== confirmPassword) {
-        return 'Passwords do not match.';
-    }
-
-    if (formData.name.length > 100) {
-        return 'Name cannot exceed 100 characters.';
-    }
-
-    if (formData.contact.length > 30) {
-        return 'Contact number cannot exceed 30 characters.';
-    }
-
-    if (formData.bio.length > 500) {
-        return 'Bio cannot exceed 500 characters.';
-    }
-
     return null;
 };
 
+const saveProfilePicture = (userId, file) => {
+    // Remove any previous picture for this user first
+    for (const ext of PROFILE_PICTURE_EXTENSIONS) {
+        const oldPath = path.join(PROFILE_PICTURE_DIR, `profile-${userId}.${ext}`);
+        if (fs.existsSync(oldPath)) {
+            fs.unlinkSync(oldPath);
+        }
+    }
+
+    const originalExt = String(file.originalname.split('.').pop() || '').toLowerCase();
+    const safeExt = PROFILE_PICTURE_EXTENSIONS.includes(originalExt) ? originalExt : 'jpg';
+    const filename = `profile-${userId}.${safeExt}`;
+
+    fs.writeFileSync(path.join(PROFILE_PICTURE_DIR, filename), file.buffer);
+    return filename;
+};
+
+const profileUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 2 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            return cb(null, true);
+        }
+        cb(new Error('Only image files are allowed.'));
+    }
+});
+
+/*
+Brute-force protection (kept in memory so the database schema does
+not change): after 5 wrong passwords for the same email, logins for
+that account are blocked for 5 minutes.
+*/
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 5;
+const failedLoginAttempts = new Map();
+
+const getLockoutMinutesLeft = (email) => {
+    const entry = failedLoginAttempts.get(email);
+    if (!entry || !entry.lockedUntil) {
+        return 0;
+    }
+    const msLeft = entry.lockedUntil - Date.now();
+    if (msLeft <= 0) {
+        failedLoginAttempts.delete(email);
+        return 0;
+    }
+    return Math.max(1, Math.ceil(msLeft / 60000));
+};
+
+const recordFailedLogin = (email) => {
+    const entry = failedLoginAttempts.get(email) || { count: 0, lockedUntil: null };
+    entry.count += 1;
+
+    if (entry.count >= MAX_LOGIN_ATTEMPTS) {
+        entry.count = 0;
+        entry.lockedUntil = Date.now() + LOCKOUT_MINUTES * 60000;
+    }
+
+    failedLoginAttempts.set(email, entry);
+    return Boolean(entry.lockedUntil);
+};
+
+/*
+Last-login times are kept in a small JSON file (data/last-logins.json)
+instead of a database column, again so the shared schema is untouched.
+*/
+const LAST_LOGIN_FILE = path.join(__dirname, 'data', 'last-logins.json');
+
+const readLastLogins = () => {
+    try {
+        return JSON.parse(fs.readFileSync(LAST_LOGIN_FILE, 'utf8'));
+    } catch (error) {
+        return {};
+    }
+};
+
+const writeLastLogins = (store) => {
+    try {
+        fs.mkdirSync(path.dirname(LAST_LOGIN_FILE), { recursive: true });
+        fs.writeFileSync(LAST_LOGIN_FILE, JSON.stringify(store, null, 2));
+    } catch (error) {
+        console.error('Unable to save last-login store:', error);
+    }
+};
+
+/*
+Middleware: validateRegistration
+
+Checks empty fields, email format, password length and match, and
+the same length limits the users table enforces. The duplicate
+email check happens inside POST /register because it needs the
+database.
+*/
+const validateRegistration = (req, res, next) => {
+    const { name, email, password, confirm_password, contact, bio } = req.body;
+
+    const fail = (message) => {
+        req.flash('error', message);
+        req.flash('formData', req.body);
+        return res.redirect('/register');
+    };
+
+    if (!name || !name.trim() || !email || !password || !confirm_password || !contact || !contact.trim()) {
+        return fail('Please complete all required fields.');
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email.trim())) {
+        return fail('Please enter a valid email address.');
+    }
+
+    if (password.length < 6) {
+        return fail('Password must contain at least 6 characters.');
+    }
+
+    if (password !== confirm_password) {
+        return fail('Passwords do not match.');
+    }
+
+    if (name.trim().length > 100) {
+        return fail('Name cannot exceed 100 characters.');
+    }
+
+    if (contact.trim().length > 30) {
+        return fail('Contact number cannot exceed 30 characters.');
+    }
+
+    if (bio && bio.trim().length > 500) {
+        return fail('Bio cannot exceed 500 characters.');
+    }
+
+    next();
+};
+
+/*
+GET /register
+
+Previously submitted values are restored from flash so the user
+does not retype everything after a validation error.
+*/
 app.get('/register', checkGuest, (req, res) => {
     return res.render('register', {
         pageTitle: 'Register',
-        error: null,
-        formData: {}
+        error: res.locals.errorMessages[0] || null,
+        success: res.locals.successMessages[0] || null,
+        formData: req.flash('formData')[0] || {}
     });
 });
 
-app.post('/register', checkGuest, async (req, res) => {
-    console.log(req.body);
+/*
+POST /register
 
-    const formData = getRegistrationData(req.body);
-    const password = req.body.password || '';
-    const confirmPassword = req.body.confirm_password || '';
-    const validationError = validateRegistrationData(formData,password,confirmPassword);
-
-    if (validationError) {
-        return res.status(400).render('register', {
-            pageTitle: 'Register',
-            error: validationError,
-            formData
-        });
-    }
-
-    try {
-        const [existingUsers] =
-            await connection.promise().query(
-                ' SELECT id FROM users WHERE email = ? LIMIT 1',[formData.email]
-            );
-
-        if (existingUsers.length > 0) {
-            return res.status(409).render('register', {
-                pageTitle: 'Register',
-                error:
-                    'An account with this email already exists.',
-                formData
-            });
-        }
-
-        const hashedPassword = await bcrypt.hash(password,12);
-
-        const role = formData.email.toLowerCase() === 'admin@gmail.com' ? 'admin' : 'user';
-
-        const [result] =
-            await connection.promise().query(
-                'INSERT INTO users (name,email,password,contact,bio,role,points,level) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [
-                    formData.name,
-                    formData.email,
-                    hashedPassword,
-                    formData.contact,
-                    formData.bio || null,
-                    role,
-                    0,
-                    1
-                ]
-            );
-
-        req.session.user = {
-            id: result.insertId,
-            name: formData.name,
-            email: formData.email,
-            role: role
-        };
-
-        return req.session.save((sessionError) => {
-            if (sessionError) {
-                console.error('Unable to save registration session:',sessionError);
-
-                return res.status(500).render(
-                    'register',
-                    {
-                        pageTitle: 'Register',
-                        error:
-                            'Account created, but automatic login failed. Please log in.',
-                        formData
-                    }
-                );
+Flow:
+1. Multer reads the optional profile picture into memory.
+2. validateRegistration checks the form fields.
+3. A SELECT query checks for a duplicate email.
+4. The password is hashed with bcrypt before saving.
+5. The new user is inserted; new accounts start at 0 XP, level 1.
+6. The profile picture (if any) is saved as profile-<id>.<ext>.
+*/
+app.post(
+    '/register',
+    checkGuest,
+    (req, res, next) => {
+        profileUpload.single('profile_picture')(req, res, (err) => {
+            if (err) {
+                req.flash('error', err.message || 'Profile picture upload failed.');
+                return res.redirect('/register');
             }
-            return res.redirect('/profile');
+            next();
         });
+    },
+    validateRegistration,
+    async (req, res) => {
+        const name = req.body.name.trim();
+        const email = req.body.email.trim().toLowerCase();
+        const contact = req.body.contact.trim();
+        const bio = req.body.bio ? req.body.bio.trim() : '';
 
-    } catch (error) {
-        console.error('Registration error:', error);
+        try {
+            const [existingUsers] = await connection.promise().query(
+                'SELECT id FROM users WHERE email = ? LIMIT 1',
+                [email]
+            );
 
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).render('register', {
-                pageTitle: 'Register',
-                error:
-                    'An account with this email already exists.',
-                formData
-            });
+            if (existingUsers.length > 0) {
+                req.flash('error', 'An account with this email already exists. Please log in instead.');
+                req.flash('formData', req.body);
+                return res.redirect('/register');
+            }
+
+            const hashedPassword = await bcrypt.hash(req.body.password, 10);
+            const role = email === 'admin@gmail.com' ? 'admin' : 'user';
+
+            const [result] = await connection.promise().query(
+                'INSERT INTO users (name,email,password,contact,bio,role,points,level) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [name, email, hashedPassword, contact, bio || null, role, 0, 1]
+            );
+
+            if (req.file) {
+                saveProfilePicture(result.insertId, req.file);
+            }
+
+            req.flash('success', 'Account created successfully! Please log in.');
+            return res.redirect('/login');
+        } catch (error) {
+            console.error('Registration error:', error);
+
+            if (error.code === 'ER_DUP_ENTRY') {
+                req.flash('error', 'An account with this email already exists.');
+                req.flash('formData', req.body);
+                return res.redirect('/register');
+            }
+
+            req.flash('error', 'Unable to create your account. Please try again.');
+            req.flash('formData', req.body);
+            return res.redirect('/register');
         }
-
-        return res.status(500).render('register', {
-            pageTitle: 'Register',
-            error:
-                'Unable to create your account. Please try again.',
-            formData
-        });
     }
-});
+);
 
+/*
+GET /login
+*/
 app.get('/login', checkGuest, (req, res) => {
     return res.render('login', {
         pageTitle: 'Login',
-        error: req.flash('error')[0] || null,
-        success: req.flash('success')[0] || null,
+        error: res.locals.errorMessages[0] || null,
+        success: res.locals.successMessages[0] || null,
         formData: {}
     });
 });
 
+/*
+POST /login
+
+Flow:
+1. Reject logins for accounts that are temporarily locked.
+2. Look the user up by email and compare the bcrypt hash.
+   Legacy accounts with plain-text passwords are also accepted and
+   upgraded to a bcrypt hash on first successful login.
+3. Wrong passwords are counted; 5 misses lock the account for
+   5 minutes.
+4. The session is regenerated (prevents session fixation), the
+   last-login time is recorded, and admins are redirected to the
+   admin dashboard.
+*/
 app.post('/login', checkGuest, async (req, res) => {
     const email = req.body.email ? req.body.email.trim().toLowerCase() : '';
     const password = req.body.password || '';
-    const formData = {email};
 
     if (!email || !password) {
-        return res.status(400).render('login', {
-            pageTitle: 'Login',
-            error:
-                'Please enter your email and password.',
-            success: null,
-            formData
-        });
+        req.flash('error', 'Please enter your email and password.');
+        return res.redirect('/login');
+    }
+
+    const minutesLocked = getLockoutMinutesLeft(email);
+    if (minutesLocked > 0) {
+        req.flash(
+            'error',
+            `Too many failed attempts. This account is locked — try again in ${minutesLocked} minute(s).`
+        );
+        return res.redirect('/login');
     }
 
     try {
-        const [users] =
-            await connection.promise().query(
-                ' SELECT id, name, email, password, role FROM users WHERE email = ? LIMIT 1',[email]
-            );
+        const [users] = await connection.promise().query(
+            'SELECT id, name, email, password, role FROM users WHERE email = ? LIMIT 1',
+            [email]
+        );
 
         if (users.length === 0) {
-            return res.status(401).render('login', {
-                pageTitle: 'Login',
-                error:
-                    'Incorrect email or password.',
-                success: null,
-                formData
-            });
+            req.flash('error', 'Incorrect email or password.');
+            return res.redirect('/login');
         }
 
         const user = users[0];
+        const storedPassword = String(user.password || '');
+        const isBcryptHash = storedPassword.startsWith('$2');
 
-        const passwordMatches = await bcrypt.compare( password,user.password);
-        if (!passwordMatches) {
-            return res.status(401).render('login', {
-                pageTitle: 'Login',
-                error:
-                    'Incorrect email or password.',
-                success: null,
-                formData
-            });
-        }
+        let passwordMatches = false;
 
-        return req.session.regenerate(
-            (regenerateError) => {
-                if (regenerateError) {
-                    console.error('Unable to regenerate session:',regenerateError);
+        if (isBcryptHash) {
+            passwordMatches = await bcrypt.compare(password, storedPassword);
+        } else {
+            // Legacy plain-text account: accept once, then upgrade the hash
+            passwordMatches = password === storedPassword;
 
-                    return res.status(500).render(
-                        'login',
-                        {
-                            pageTitle: 'Login',
-                            error:
-                                'Unable to log in. Please try again.',
-                            success: null,
-                            formData
-                        }
-                    );
-                }
-
-                req.session.user = {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role
-                };
-
-                return req.session.save(
-                    (saveError) => {
-                        if (saveError) {
-                            console.error(
-                                'Unable to save login session:',
-                                saveError
-                            );
-
-                            return res
-                                .status(500)
-                                .render('login', {
-                                    pageTitle:
-                                        'Login',
-                                    error:
-                                        'Unable to log in. Please try again.',
-                                    success: null,
-                                    formData
-                                });
-                        }
-
-                        if (user.role === 'admin') {
-                            return res.redirect(
-                                '/admin'
-                            );
-                        }
-
-                        return res.redirect(
-                            '/profile'
-                        );
-                    }
+            if (passwordMatches) {
+                const upgradedHash = await bcrypt.hash(password, 10);
+                await connection.promise().query(
+                    'UPDATE users SET password = ? WHERE id = ?',
+                    [upgradedHash, user.id]
                 );
             }
-        );
+        }
+
+        if (!passwordMatches) {
+            const nowLocked = recordFailedLogin(email);
+            req.flash(
+                'error',
+                nowLocked
+                    ? `Too many failed attempts. This account is locked for ${LOCKOUT_MINUTES} minutes.`
+                    : 'Incorrect email or password.'
+            );
+            return res.redirect('/login');
+        }
+
+        failedLoginAttempts.delete(email);
+
+        // Remember the PREVIOUS login for the profile page, then stamp this one
+        const lastLogins = readLastLogins();
+        const previousLogin = lastLogins[user.id] || null;
+        lastLogins[user.id] = new Date().toISOString();
+        writeLastLogins(lastLogins);
+
+        return req.session.regenerate((regenerateError) => {
+            if (regenerateError) {
+                console.error('Unable to regenerate session:', regenerateError);
+                return res.status(500).render('login', {
+                    pageTitle: 'Login',
+                    error: 'Unable to log in. Please try again.',
+                    success: null,
+                    formData: { email }
+                });
+            }
+
+            req.session.user = {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                previous_login: previousLogin
+            };
+
+            req.flash('success', `Welcome back, ${user.name}!`);
+
+            return req.session.save((saveError) => {
+                if (saveError) {
+                    console.error('Unable to save login session:', saveError);
+                    return res.status(500).render('login', {
+                        pageTitle: 'Login',
+                        error: 'Unable to log in. Please try again.',
+                        success: null,
+                        formData: { email }
+                    });
+                }
+
+                if (user.role === 'admin') {
+                    return res.redirect('/admin');
+                }
+
+                return res.redirect('/profile');
+            });
+        });
     } catch (error) {
         console.error('Login error:', error);
-
-        return res.status(500).render('login', {
-            pageTitle: 'Login',
-            error:
-                'Unable to log in. Please try again.',
-            success: null,
-            formData
-        });
+        req.flash('error', 'Unable to log in. Please try again.');
+        return res.redirect('/login');
     }
 });
 
-app.post('/logout',checkAuthenticated,(req, res) => {
+/*
+POST /logout (the navbar uses a POST form; GET kept for old links)
+*/
+const handleLogout = (req, res) => {
     req.session.destroy((error) => {
-            if (error) {
-                console.error('Logout error:',error);
+        if (error) {
+            console.error('Logout error:', error);
+            return res.status(500).send('Unable to log out.');
+        }
 
-                return res
-                    .status(500)
-                    .send('Unable to log out.');
-            }
+        res.clearCookie('connect.sid');
+        return res.redirect('/login');
+    });
+};
 
-            res.clearCookie('connect.sid');
+app.post('/logout', checkAuthenticated, handleLogout);
+app.get('/logout', checkAuthenticated, handleLogout);
 
+/*
+GET /profile
+
+Shows the logged-in user's profile: picture, bio, contact, level
+and XP (from gamification), last login, and their skills.
+*/
+app.get('/profile', checkAuthenticated, async (req, res) => {
+    const userId = req.session.user.id;
+
+    try {
+        const [users] = await connection.promise().query(
+            'SELECT id, name, email, contact, bio, role, points, level, created_at FROM users WHERE id = ? LIMIT 1',
+            [userId]
+        );
+
+        if (users.length === 0) {
+            req.session.destroy(() => {});
             return res.redirect('/login');
+        }
+
+        const [skills] = await connection.promise().query(
+            'SELECT id, skill_name, category, skill_level, skill_type, description, availability, location, created_at FROM skills WHERE user_id = ? ORDER BY created_at DESC',
+            [userId]
+        );
+
+        const offerSkills = skills.filter(
+            (skill) => String(skill.skill_type).toLowerCase() === 'offer'
+        );
+        const learnSkills = skills.filter(
+            (skill) => String(skill.skill_type).toLowerCase() === 'learn'
+        );
+
+        return res.render('profile', {
+            pageTitle: 'My Profile',
+            profileUser: users[0],
+            profilePicture: getProfilePictureFilename(userId),
+            previousLogin: req.session.user.previous_login || null,
+            offerSkills,
+            learnSkills,
+            success: res.locals.successMessages[0] || null,
+            error: res.locals.errorMessages[0] || null
         });
+    } catch (error) {
+        console.error('Profile error:', error);
+        return res.status(500).send('Unable to retrieve your profile.');
     }
-);
+});
 
+/*
+GET /profile/edit
+*/
+app.get('/profile/edit', checkAuthenticated, async (req, res) => {
+    try {
+        const [users] = await connection.promise().query(
+            'SELECT id, name, email, contact, bio FROM users WHERE id = ? LIMIT 1',
+            [req.session.user.id]
+        );
 
-app.get(
-    '/profile',
+        if (users.length === 0) {
+            req.session.destroy(() => {});
+            return res.redirect('/login');
+        }
+
+        return res.render('edit-profile', {
+            pageTitle: 'Edit Profile',
+            profileUser: users[0],
+            profilePicture: getProfilePictureFilename(users[0].id),
+            error: res.locals.errorMessages[0] || null,
+            success: res.locals.successMessages[0] || null
+        });
+    } catch (error) {
+        console.error('Edit profile page error:', error);
+        return res.status(500).send('Unable to retrieve your profile.');
+    }
+});
+
+/*
+POST /profile/edit
+
+Updates name, contact, bio and (optionally) the profile picture.
+Email is not editable because it identifies the account.
+*/
+app.post(
+    '/profile/edit',
     checkAuthenticated,
+    (req, res, next) => {
+        profileUpload.single('profile_picture')(req, res, (err) => {
+            if (err) {
+                req.flash('error', err.message || 'Profile picture upload failed.');
+                return res.redirect('/profile/edit');
+            }
+            next();
+        });
+    },
     async (req, res) => {
-        const userId = req.session.user.id;
-
-        try {
-            const [users] =
-                await connection.promise().query(
-                    ' SELECT id, name, email,contact, bio,role,points,level FROM users WHERE id = ? LIMIT 1',[userId]
-                );
-
-            if (users.length === 0) {
-                req.session.destroy(() => {});
-
-                return res.redirect('/login');
-            }
-
-            const [skills] =
-                await connection.promise().query(
-                    ' SELECT id, skill_name, category, skill_level, skill_type, description,availability,location,created_at FROM skills WHERE user_id = ? ORDER BY created_at DESC',[userId]
-                );
-
-            const offerSkills = skills.filter(
-                (skill) => {
-                    return (
-                        String(
-                            skill.skill_type
-                        ).toLowerCase() ===
-                        'offer'
-                    );
-                }
-            );
-
-            const learnSkills = skills.filter(
-                (skill) => {
-                    return (
-                        String(
-                            skill.skill_type
-                        ).toLowerCase() ===
-                        'learn'
-                    );
-                }
-            );
-
-            return res.render('profile', {
-                pageTitle: 'My Profile',
-                user: users[0],
-                offerSkills,
-                learnSkills,
-                editing: false,
-                success:
-                    req.flash('success')[0] ||
-                    null,
-                error:
-                    req.flash('error')[0] ||
-                    null
-            });
-        } catch (error) {
-            console.error(
-                'Profile error:',
-                error
-            );
-
-            return res
-                .status(500)
-                .send(
-                    'Unable to retrieve your profile.'
-                );
-        }
-    }
-);
-
-app.get('/profile/edit',checkAuthenticated,async (req, res) => {
-        try {
-            const [users] =
-                await connection.promise().query(
-                    ' SELECT id, name,email,contact,bio,role,points,level FROM users WHERE id = ? LIMIT 1',[req.session.user.id]
-                );
-
-            if (users.length === 0) {
-                req.session.destroy(() => {});
-
-                return res.redirect('/login');
-            }
-
-            return res.render('profile', {
-                pageTitle: 'Edit Profile',
-                user: users[0],
-                offerSkills: [],
-                learnSkills: [],
-                editing: true,
-                success: null,
-                error:
-                    req.flash('error')[0] ||
-                    null
-            });
-        } catch (error) {
-            console.error('Edit profile page error:',error
-            );
-
-            return res
-                .status(500)
-                .send(
-                    'Unable to retrieve your profile.'
-                );
-        }
-    }
-);
-
-app.post('/profile/edit',checkAuthenticated, async (req, res) => {
         const userId = req.session.user.id;
         const name = req.body.name ? req.body.name.trim() : '';
         const contact = req.body.contact ? req.body.contact.trim() : '';
-
         const bio = req.body.bio ? req.body.bio.trim() : '';
 
         if (!name || !contact) {
-            req.flash('error', 'Name and contact number are required.'
-            );
-
+            req.flash('error', 'Name and contact number are required.');
             return res.redirect('/profile/edit');
         }
 
         if (name.length > 100) {
-            req.flash('error', 'Name cannot exceed 100 characters.'
-            );
-
+            req.flash('error', 'Name cannot exceed 100 characters.');
             return res.redirect('/profile/edit');
         }
 
         if (contact.length > 30) {
-            req.flash('error', 'Contact number cannot exceed 30 characters.'
-            );
-
+            req.flash('error', 'Contact number cannot exceed 30 characters.');
             return res.redirect('/profile/edit');
         }
 
         if (bio.length > 500) {
-            req.flash('error', 'Bio cannot exceed 500 characters.'
-            );
-
+            req.flash('error', 'Bio cannot exceed 500 characters.');
             return res.redirect('/profile/edit');
         }
 
         try {
-            const [users] =
-                await connection.promise().query(
-                    'SELECT id FROM users WHERE id = ? LIMIT 1',[userId]
-                );
+            await connection.promise().query(
+                'UPDATE users SET name = ?, contact = ?, bio = ? WHERE id = ?',
+                [name, contact, bio || null, userId]
+            );
 
-            if (users.length === 0) {
-                req.session.destroy(() => {});
-
-                return res.redirect('/login');
+            if (req.file) {
+                saveProfilePicture(userId, req.file);
             }
 
-            await connection.promise().query(
-                `
-                UPDATE users
-                SET
-                    name = ?,
-                    contact = ?,
-                    bio = ?
-                WHERE id = ?
-                `,
-                [
-                    name,
-                    contact,
-                    bio || null,
-                    userId
-                ]
-            );
-
+            // Keep the session copy in sync so the navbar updates immediately
             req.session.user.name = name;
 
-            req.flash('success','Profile updated successfully.'
-            );
-
-            return req.session.save(
-                (sessionError) => {
-                    if (sessionError) {
-                        console.error(
-                            'Profile session update error:',
-                            sessionError
-                        );
-                    }
-
-                    return res.redirect('/profile');
-                }
-            );
+            req.flash('success', 'Profile updated successfully.');
+            return req.session.save(() => res.redirect('/profile'));
         } catch (error) {
-            console.error('Profile update error:',error
-            );
-
-            req.flash('error','Unable to update your profile.'
-            );
-
+            console.error('Profile update error:', error);
+            req.flash('error', 'Unable to update your profile.');
             return res.redirect('/profile/edit');
         }
     }
 );
+
+/*
+GET /users/:id
+
+Public member profile: lets any logged-in member view another
+member's profile and skills before sending an exchange request.
+
+Privacy decisions:
+- Only logged-in members can view profiles.
+- Email and contact number are NOT shown to other members.
+- Viewing your own ID redirects to /profile (use ?preview=1 to see
+  how your profile looks to other members).
+*/
+app.get('/users/:id', checkAuthenticated, async (req, res) => {
+    const viewedUserId = Number.parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(viewedUserId) || viewedUserId <= 0) {
+        req.flash('error', 'That member does not exist.');
+        return res.redirect('/matches');
+    }
+
+    if (viewedUserId === Number(req.session.user.id) && !req.query.preview) {
+        return res.redirect('/profile');
+    }
+
+    try {
+        const [users] = await connection.promise().query(
+            'SELECT id, name, bio, role, points, level, created_at FROM users WHERE id = ? LIMIT 1',
+            [viewedUserId]
+        );
+
+        if (users.length === 0) {
+            req.flash('error', 'That member does not exist.');
+            return res.redirect('/matches');
+        }
+
+        const [skills] = await connection.promise().query(
+            'SELECT id, skill_name, category, skill_level, skill_type, description, availability, location FROM skills WHERE user_id = ? ORDER BY created_at DESC',
+            [viewedUserId]
+        );
+
+        const offerSkills = skills.filter(
+            (skill) => String(skill.skill_type).toLowerCase() === 'offer'
+        );
+        const learnSkills = skills.filter(
+            (skill) => String(skill.skill_type).toLowerCase() === 'learn'
+        );
+
+        return res.render('user-profile', {
+            pageTitle: `${users[0].name}'s Profile`,
+            viewedUser: users[0],
+            viewedPicture: getProfilePictureFilename(viewedUserId),
+            offerSkills,
+            learnSkills,
+            isPreview: Boolean(req.query.preview)
+        });
+    } catch (error) {
+        console.error('Error loading member profile:', error);
+        return res.status(500).send('Unable to load this member profile.');
+    }
+});
 
 app.get('/admin',checkAuthenticated,checkAdmin,async (req, res) => {
         try {
@@ -2252,8 +2357,7 @@ app.post(
 /********************************************************************
                     Member 4: GAMIFICATION
 ********************************************************************/
-// awardXP adds points to the user's total, the checks for a level up.
-// COALESCE handles users who have NULL points (new users).
+//Award XP to user and triggers level up check
 function awardXP(userId, amount) {
     connection.query(
         'UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?',
@@ -2268,10 +2372,7 @@ function awardXP(userId, amount) {
     );
 }
 
-// checkLevelUp reads the user's current points and level.
-// Each level requires (level * 100) total XP to advance. (For example, reaching level 2 requires 200 total XP.)
-// The user's XP total is NOT reset on level up — it keeps accumulating toward the next level.
-// Note: accumulating enough XP to skip multiple levels is not handled.
+//Level Up check: triggers if have enough XP
 function checkLevelUp(userId) {
     connection.query(
         'SELECT points, level FROM users WHERE id = ?',
@@ -2293,45 +2394,26 @@ function checkLevelUp(userId) {
     );
 }
 
-// awardBadge grants a single badge to a user if they do not already have it. Uses a two-step lookup
-// Step 1: resolve badge_name → badge_id from the badges table.
-// Step 2: check user_badges for an existing row; insert if absent.
-// This prevents duplicate badge entries.
+//Check if badge already earned, then insert if not
 function awardBadge(userId, badgeName) {
     connection.query(
-        'SELECT badge_id FROM badges WHERE badge_name = ?',
-        [badgeName],
-        (err, badgeRows) => {
-            if (err || badgeRows.length === 0) {
-                if (err) console.error('Error finding badge:', err);
+        'SELECT id FROM user_badges WHERE user_id = ? AND badge_name = ?',
+        [userId, badgeName],
+        (err, rows) => {
+            if (err) {
+                console.error('Error checking badge:', err);
                 return;
             }
-            const badgeId = badgeRows[0].badge_id;
-            // Check if this badge is already earned by the user.
-            // If it is, skip the insert to avoid duplicates.
+            if (rows.length > 0) return;
             connection.query(
-                'SELECT user_badge_id FROM user_badges WHERE user_id = ? AND badge_id = ?',
-                [userId, badgeId],
-                (err, rows) => {
-                    if (err) {
-                        console.error('Error checking badge:', err);
-                        return;
-                    }
-                    if (rows.length > 0) return;
-                    // Insert the badge using the foreign key badge_id
-                    connection.query(
-                        'INSERT INTO user_badges (user_id, badge_id) VALUES (?, ?)',
-                        [userId, badgeId]
-                    );
-                }
+                'INSERT INTO user_badges (user_id, badge_name) VALUES (?, ?)',
+                [userId, badgeName]
             );
         }
     );
 }
 
-// checkAndAwardBadges counts completed sessions and awards badges based on milestone thresholds.
-// First query: total sessions where the user participated (as either learner or teacher). Awards badges at 1, 5, 10, 20.
-// Second query: sessions where the user was the teacher. Awards the 'Top Teacher' badge at 5 sessions taught.
+//Checks exchange history & completion, awarding badges to both learner & teacher if completed
 function checkAndAwardBadges(userId) {
     connection.query(
         'SELECT COUNT(*) AS total FROM sessions WHERE (learner_id = ? OR teacher_id = ?) AND status = "completed"',
@@ -2339,8 +2421,8 @@ function checkAndAwardBadges(userId) {
         (err, result) => {
             if (err) return;
             const total = result[0].total;
-            if (total >= 1) awardBadge(userId, 'First Step');
-            if (total >= 5) awardBadge(userId, 'Active Learner');
+            if (total >= 1) awardBadge(userId, 'First Trade');
+            if (total >= 10) awardBadge(userId, 'Skill Master');
             if (total >= 10) awardBadge(userId, 'Skill Master');
             if (total >= 20) awardBadge(userId, 'Community Hero');
         }
@@ -2360,18 +2442,10 @@ function checkAndAwardBadges(userId) {
 // GET /badges - Display badges and progress page
 // ===============================================
 
-// Protected route that gathers all data needed by badges.ejs:
-// 1. User's current XP and level (from users table)
-// 2. XP required for the next level (level * 100)
-// 3. Total completed exchanges (sessions where user is learner or teacher)
-// 4. Completed exchanges where user was the teacher
-// 5. Set of badge names the user has already earned (via JOIN query)
-
-// All is passed to badges.ejs which renders the progress bar, stats card, and badge cards (earned vs locked).
+//Protected route, queries user XP, level, exchange stuff & earned badges before routing to badges.ejs
 app.get('/badges', checkAuthenticated, (req, res) => {
     const userId = req.session.user.id;
 
-    // Step 1: Get user's current points and level
     connection.query('SELECT points, level FROM users WHERE id = ?', [userId], (err, userRows) => {
         if (err || userRows.length === 0) {
             req.flash('error', 'User not found');
@@ -2387,24 +2461,20 @@ app.get('/badges', checkAuthenticated, (req, res) => {
         const level = userRows[0].level || 1;
         const xpForNextLevel = level * 100;
 
-        // Step 2: Count total completed exchanges (as learner or teacher)
         connection.query(
             'SELECT COUNT(*) AS total FROM sessions WHERE (learner_id = ? OR teacher_id = ?) AND status = "completed"',
             [userId, userId],
             (err, exchangeRows) => {
                 const totalExchanges = exchangeRows ? exchangeRows[0].total : 0;
 
-                // Step 3: Count completed exchanges as teacher
                 connection.query(
                     'SELECT COUNT(*) AS count FROM sessions WHERE teacher_id = ? AND status = "completed"',
                     [userId],
                     (err, teacherRows) => {
                         const teacherExchanges = teacherRows ? teacherRows[0].count : 0;
 
-                        // Step 4: Get list of badge names the user has earned
-                        // Joins user_badges with badges to resolve badge_id → badge_name
                         connection.query(
-                            'SELECT badges.badge_name FROM user_badges INNER JOIN badges ON badges.badge_id = user_badges.badge_id WHERE user_badges.user_id = ?',
+                            'SELECT badge_name FROM user_badges WHERE user_id = ?',
                             [userId],
                             (err, badgeRows) => {
                                 const earnedBadges = badgeRows ? badgeRows.map(b => b.badge_name) : [];
@@ -2988,7 +3058,8 @@ app.post(
     }
 );
 
-// POST /schedule/:id/complete - only the teacher can mark a Confirmed session as Completed, which triggers gamification rewards
+// POST /schedule/:id/complete - only the teacher can mark a Confirmed
+// session as Completed, which triggers gamification rewards
 app.post(
     '/schedule/:id/complete',
     checkAuthenticated,

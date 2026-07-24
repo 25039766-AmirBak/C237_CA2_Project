@@ -9,7 +9,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title><%= pageTitle %> | SkillSwap</title>
+    <title>My Profile | SkillSwap</title>
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -32,592 +32,487 @@
     <main class="profile-wrapper">
 
         <% if (success) { %>
-            <div class="alert alert-success">
-                <%= success %>
+            <div class="alert alert-success" role="alert">
+                <i class="fa-solid fa-circle-check me-2"></i><%= success %>
             </div>
         <% } %>
 
         <% if (error) { %>
-            <div class="alert alert-danger">
-                <%= error %>
+            <div class="alert alert-danger" role="alert">
+                <i class="fa-solid fa-circle-exclamation me-2"></i><%= error %>
             </div>
         <% } %>
 
-        <% if (
-            typeof editing !== 'undefined' &&
-            editing
-        ) { %>
+        <section class="profile-card">
 
-            <section class="edit-profile-card">
+            <div class="profile-cover"></div>
 
-                <div class="mb-4">
+            <div class="profile-content">
 
-                    <p class="text-primary fw-semibold mb-1">
-                        Account Settings
-                    </p>
+                <div class="profile-top">
 
-                    <h1 class="fw-bold">
-                        Edit Profile
-                    </h1>
+                    <div class="profile-identity">
 
-                    <p class="text-muted">
-                        Update your personal information.
-                    </p>
+                        <div class="profile-avatar">
+                            <% if (profilePicture) { %>
+                                <img
+                                    src="/images/<%= profilePicture %>"
+                                    alt="<%= profileUser.name %>'s profile picture"
+                                >
+                            <% } else { %>
+                                <%= String(profileUser.name || 'U').charAt(0).toUpperCase() %>
+                            <% } %>
+                        </div>
 
-                </div>
+                        <div class="profile-name">
 
-                <form
-                    action="/profile/edit"
-                    method="POST"
-                >
+                            <h1>
+                                <%= profileUser.name %>
+                            </h1>
 
-                    <div class="row g-3">
-
-                        <div class="col-md-6">
-
-                            <label
-                                for="name"
-                                class="form-label"
-                            >
-                                Full Name *
-                            </label>
-
-                            <input
-                                type="text"
-                                id="name"
-                                name="name"
-                                class="form-control"
-                                value="<%= user.name || '' %>"
-                                maxlength="100"
-                                required
-                            >
+                            <p>
+                                <%= profileUser.email %>
+                            </p>
 
                         </div>
 
-                        <div class="col-md-6">
+                    </div>
 
-                            <label
-                                for="email"
-                                class="form-label"
-                            >
-                                Email
-                            </label>
+                    <div class="profile-actions">
 
-                            <input
-                                type="email"
-                                id="email"
-                                class="form-control"
-                                value="<%= user.email || '' %>"
-                                disabled
-                            >
+                        <a
+                            href="/users/<%= profileUser.id %>?preview=1"
+                            class="btn btn-outline-primary"
+                            title="See your profile the way other members see it"
+                        >
+                            <i class="fa-solid fa-eye me-1"></i>
+                            Public View
+                        </a>
 
-                        </div>
+                        <a
+                            href="/profile/edit"
+                            class="btn btn-primary"
+                        >
+                            <i class="fa-solid fa-pen me-1"></i>
+                            Edit Profile
+                        </a>
 
-                        <div class="col-md-6">
-
-                            <label
-                                for="contact"
-                                class="form-label"
-                            >
-                                Contact Number *
-                            </label>
-
-                            <input
-                                type="text"
-                                id="contact"
-                                name="contact"
-                                class="form-control"
-                                value="<%= user.contact || '' %>"
-                                maxlength="30"
-                                required
-                            >
-
-                        </div>
-
-                        <div class="col-12">
-
-                            <label
-                                for="bio"
-                                class="form-label"
-                            >
-                                Bio
-                            </label>
-
-                            <textarea
-                                id="bio"
-                                name="bio"
-                                class="form-control"
-                                rows="5"
-                                maxlength="500"
-                            ><%= user.bio || '' %></textarea>
-
-                        </div>
-
-                        <div class="col-12 mt-4 d-flex gap-2">
+                        <form
+                            action="/logout"
+                            method="POST"
+                        >
 
                             <button
                                 type="submit"
-                                class="btn btn-primary"
+                                class="btn btn-outline-danger"
                             >
-                                Save Changes
+                                Log Out
                             </button>
 
-                            <a
-                                href="/profile"
-                                class="btn btn-outline-secondary"
-                            >
-                                Cancel
-                            </a>
-
-                        </div>
+                        </form>
 
                     </div>
-
-                </form>
-
-            </section>
-
-        <% } else { %>
-
-            <section class="profile-card">
-
-                <div class="profile-cover"></div>
-
-                <div class="profile-content">
-
-                    <div class="profile-top">
-
-                        <div class="profile-identity">
-
-                            <div class="profile-avatar">
-                                <%= String(user.name || 'U')
-                                    .charAt(0)
-                                    .toUpperCase() %>
-                            </div>
-
-                            <div class="profile-name">
-
-                                <h1>
-                                    <%= user.name %>
-                                </h1>
-
-                                <p>
-                                    <%= user.email %>
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                        <div class="profile-actions">
-
-                            <a
-                                href="/profile/edit"
-                                class="btn btn-primary"
-                            >
-                                <i class="fa-solid fa-pen me-1"></i>
-                                Edit Profile
-                            </a>
-
-                            <form
-                                action="/logout"
-                                method="POST"
-                            >
-
-                                <button
-                                    type="submit"
-                                    class="btn btn-outline-danger"
-                                >
-                                    Log Out
-                                </button>
-
-                            </form>
-
-                        </div>
-
-                    </div>
-
-                    <section class="profile-section">
-
-                        <h2>
-                            About Me
-                        </h2>
-
-                        <p>
-                            <%= user.bio ||
-                                'No profile description has been added.' %>
-                        </p>
-
-                    </section>
-
-                    <section class="profile-section">
-
-                        <h2>
-                            Profile Information
-                        </h2>
-
-                        <div class="information-grid">
-
-                            <div class="information-item">
-
-                                <span>
-                                    Contact Number
-                                </span>
-
-                                <strong>
-                                    <%= user.contact ||
-                                        'Not provided' %>
-                                </strong>
-
-                            </div>
-
-                            <div class="information-item">
-
-                                <span>
-                                    Role
-                                </span>
-
-                                <strong>
-                                    <%= user.role || 'user' %>
-                                </strong>
-
-                            </div>
-
-                            <div class="information-item">
-
-                                <span>
-                                    Level
-                                </span>
-
-                                <strong>
-                                    Level <%= user.level || 1 %>
-                                </strong>
-
-                            </div>
-
-                            <div class="information-item">
-
-                                <span>
-                                    Experience Points
-                                </span>
-
-                                <strong>
-                                    <%= user.points || 0 %> XP
-                                </strong>
-
-                            </div>
-
-                        </div>
-
-                    </section>
-
-                    <section class="profile-section">
-
-                        <div class="skill-section-heading">
-
-                            <div>
-
-                                <p class="section-label">
-                                    Teaching
-                                </p>
-
-                                <h2>
-                                    Skills I Offer
-                                </h2>
-
-                            </div>
-
-                            <a
-                                href="/skills/add"
-                                class="btn btn-sm btn-primary"
-                            >
-                                <i class="fa-solid fa-plus me-1"></i>
-                                Add Skill
-                            </a>
-
-                        </div>
-
-                        <% if (
-                            typeof offerSkills !== 'undefined' &&
-                            offerSkills.length > 0
-                        ) { %>
-
-                            <div class="skills-grid">
-
-                                <% offerSkills.forEach((skill) => { %>
-
-                                    <article class="skill-profile-card">
-
-                                        <div class="skill-card-header">
-
-                                            <div>
-
-                                                <span class="skill-type-label offer-label">
-                                                    Offer
-                                                </span>
-
-                                                <h3>
-                                                    <%= skill.skill_name %>
-                                                </h3>
-
-                                            </div>
-
-                                            <i class="fa-solid fa-chalkboard-user skill-card-icon"></i>
-
-                                        </div>
-
-                                        <p>
-                                            <%= skill.description ||
-                                                'No description provided.' %>
-                                        </p>
-
-                                        <div class="skill-tags">
-
-                                            <% if (skill.category) { %>
-                                                <span class="skill-tag">
-                                                    <%= skill.category %>
-                                                </span>
-                                            <% } %>
-
-                                            <% if (skill.skill_level) { %>
-                                                <span class="skill-tag">
-                                                    <%= skill.skill_level %>
-                                                </span>
-                                            <% } %>
-
-                                            <% if (skill.availability) { %>
-                                                <span class="skill-tag">
-                                                    <%= skill.availability %>
-                                                </span>
-                                            <% } %>
-
-                                            <% if (skill.location) { %>
-                                                <span class="skill-tag">
-                                                    <i class="fa-solid fa-location-dot me-1"></i>
-                                                    <%= skill.location %>
-                                                </span>
-                                            <% } %>
-
-                                        </div>
-
-                                        <div class="skill-card-actions">
-
-                                            <a
-                                                href="/skills/<%= skill.id %>/edit"
-                                                class="btn btn-sm btn-outline-primary"
-                                            >
-                                                <i class="fa-solid fa-pen me-1"></i>
-                                                Edit
-                                            </a>
-
-                                            <form
-                                                action="/skills/<%= skill.id %>/delete"
-                                                method="POST"
-                                                onsubmit="return confirm('Delete this skill?');"
-                                            >
-
-                                                <button
-                                                    type="submit"
-                                                    class="btn btn-sm btn-outline-danger"
-                                                >
-                                                    <i class="fa-solid fa-trash me-1"></i>
-                                                    Delete
-                                                </button>
-
-                                            </form>
-
-                                        </div>
-
-                                    </article>
-
-                                <% }) %>
-
-                            </div>
-
-                        <% } else { %>
-
-                            <div class="empty-skills">
-
-                                <i class="fa-solid fa-lightbulb"></i>
-
-                                <h3>
-                                    No offered skills yet
-                                </h3>
-
-                                <p>
-                                    Add a skill that you can teach to another member.
-                                </p>
-
-                                <a
-                                    href="/skills/add"
-                                    class="btn btn-primary btn-sm"
-                                >
-                                    Add Your First Skill
-                                </a>
-
-                            </div>
-
-                        <% } %>
-
-                    </section>
-
-                    <section class="profile-section">
-
-                        <div class="skill-section-heading">
-
-                            <div>
-
-                                <p class="section-label">
-                                    Learning
-                                </p>
-
-                                <h2>
-                                    Skills I Want to Learn
-                                </h2>
-
-                            </div>
-
-                            <a
-                                href="/skills/add"
-                                class="btn btn-sm btn-outline-primary"
-                            >
-                                <i class="fa-solid fa-plus me-1"></i>
-                                Add Learning Skill
-                            </a>
-
-                        </div>
-
-                        <% if (
-                            typeof learnSkills !== 'undefined' &&
-                            learnSkills.length > 0
-                        ) { %>
-
-                            <div class="skills-grid">
-
-                                <% learnSkills.forEach((skill) => { %>
-
-                                    <article class="skill-profile-card">
-
-                                        <div class="skill-card-header">
-
-                                            <div>
-
-                                                <span class="skill-type-label learn-label">
-                                                    Learn
-                                                </span>
-
-                                                <h3>
-                                                    <%= skill.skill_name %>
-                                                </h3>
-
-                                            </div>
-
-                                            <i class="fa-solid fa-book-open skill-card-icon"></i>
-
-                                        </div>
-
-                                        <p>
-                                            <%= skill.description ||
-                                                'No description provided.' %>
-                                        </p>
-
-                                        <div class="skill-tags">
-
-                                            <% if (skill.category) { %>
-                                                <span class="skill-tag">
-                                                    <%= skill.category %>
-                                                </span>
-                                            <% } %>
-
-                                            <% if (skill.skill_level) { %>
-                                                <span class="skill-tag">
-                                                    <%= skill.skill_level %>
-                                                </span>
-                                            <% } %>
-
-                                            <% if (skill.availability) { %>
-                                                <span class="skill-tag">
-                                                    <%= skill.availability %>
-                                                </span>
-                                            <% } %>
-
-                                            <% if (skill.location) { %>
-                                                <span class="skill-tag">
-                                                    <i class="fa-solid fa-location-dot me-1"></i>
-                                                    <%= skill.location %>
-                                                </span>
-                                            <% } %>
-
-                                        </div>
-
-                                        <div class="skill-card-actions">
-
-                                            <a
-                                                href="/skills/<%= skill.id %>/edit"
-                                                class="btn btn-sm btn-outline-primary"
-                                            >
-                                                <i class="fa-solid fa-pen me-1"></i>
-                                                Edit
-                                            </a>
-
-                                            <form
-                                                action="/skills/<%= skill.id %>/delete"
-                                                method="POST"
-                                                onsubmit="return confirm('Delete this skill?');"
-                                            >
-
-                                                <button
-                                                    type="submit"
-                                                    class="btn btn-sm btn-outline-danger"
-                                                >
-                                                    <i class="fa-solid fa-trash me-1"></i>
-                                                    Delete
-                                                </button>
-
-                                            </form>
-
-                                        </div>
-
-                                    </article>
-
-                                <% }) %>
-
-                            </div>
-
-                        <% } else { %>
-
-                            <div class="empty-skills">
-
-                                <i class="fa-solid fa-graduation-cap"></i>
-
-                                <h3>
-                                    No learning skills yet
-                                </h3>
-
-                                <p>
-                                    Add a skill that you would like another member to teach you.
-                                </p>
-
-                                <a
-                                    href="/skills/add"
-                                    class="btn btn-outline-primary btn-sm"
-                                >
-                                    Add a Skill to Learn
-                                </a>
-
-                            </div>
-
-                        <% } %>
-
-                    </section>
 
                 </div>
 
-            </section>
+                <section class="profile-section">
 
-        <% } %>
+                    <h2>
+                        About Me
+                    </h2>
+
+                    <p>
+                        <%= profileUser.bio || 'No bio added yet.' %>
+                    </p>
+
+                </section>
+
+                <section class="profile-section">
+
+                    <h2>
+                        Profile Information
+                    </h2>
+
+                    <div class="information-grid">
+
+                        <div class="information-item">
+
+                            <span>
+                                Contact Number
+                            </span>
+
+                            <strong>
+                                <%= profileUser.contact || 'Not provided' %>
+                            </strong>
+
+                        </div>
+
+                        <div class="information-item">
+
+                            <span>
+                                Role
+                            </span>
+
+                            <strong>
+                                <%= profileUser.role || 'user' %>
+                            </strong>
+
+                        </div>
+
+                        <div class="information-item">
+
+                            <span>
+                                Level
+                            </span>
+
+                            <strong>
+                                Level <%= profileUser.level || 1 %>
+                            </strong>
+
+                        </div>
+
+                        <div class="information-item">
+
+                            <span>
+                                Experience Points
+                            </span>
+
+                            <strong>
+                                <%= profileUser.points || 0 %> XP
+                            </strong>
+
+                        </div>
+
+                                                <div class="information-item">
+
+                            <span>
+                                Member Since
+                            </span>
+
+                            <strong>
+                                <%= profileUser.created_at
+                                    ? new Date(profileUser.created_at).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })
+                                    : '-' %>
+                            </strong>
+
+                        </div>
+
+                        <div class="information-item">
+
+                            <span>
+                                Last Login
+                            </span>
+
+                            <strong>
+                                <%= previousLogin
+                                    ? new Date(previousLogin).toLocaleString('en-SG', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+                                    : 'This is your first login!' %>
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <section class="profile-section">
+
+                    <div class="skill-section-heading">
+
+                        <div>
+
+                            <p class="section-label">
+                                Teaching
+                            </p>
+
+                            <h2>
+                                Skills I Offer
+                            </h2>
+
+                        </div>
+
+                        <a
+                            href="/skills/add"
+                            class="btn btn-sm btn-primary"
+                        >
+                            <i class="fa-solid fa-plus me-1"></i>
+                            Add Skill
+                        </a>
+
+                    </div>
+
+                    <% if (!offerSkills || offerSkills.length === 0) { %>
+
+                        <div class="empty-skills">
+
+                            <i class="fa-solid fa-lightbulb"></i>
+
+                            <h3>
+                                No offered skills yet
+                            </h3>
+
+                            <p>
+                                Add a skill that you can teach to another member.
+                            </p>
+
+                            <a
+                                href="/skills/add"
+                                class="btn btn-primary btn-sm"
+                            >
+                                Add Your First Skill
+                            </a>
+
+                        </div>
+
+                    <% } else { %>
+
+                        <div class="skills-grid">
+
+                            <% offerSkills.forEach((skill) => { %>
+
+                                <article class="skill-profile-card">
+
+                                    <div class="skill-card-header">
+
+                                        <div>
+
+                                            <span class="skill-type-label offer-label">
+                                                Offer
+                                            </span>
+
+                                            <h3>
+                                                <%= skill.skill_name %>
+                                            </h3>
+
+                                        </div>
+
+                                        <i class="fa-solid fa-chalkboard-user skill-card-icon"></i>
+
+                                    </div>
+
+                                    <p>
+                                        <%= skill.description || 'No description added.' %>
+                                    </p>
+
+                                    <div class="skill-tags">
+
+                                        <% if (skill.category) { %>
+                                            <span class="skill-tag">
+                                                <%= skill.category %>
+                                            </span>
+                                        <% } %>
+
+                                        <% if (skill.skill_level) { %>
+                                            <span class="skill-tag">
+                                                <%= skill.skill_level %>
+                                            </span>
+                                        <% } %>
+
+                                        <% if (skill.availability) { %>
+                                            <span class="skill-tag">
+                                                <%= skill.availability %>
+                                            </span>
+                                        <% } %>
+
+                                        <% if (skill.location) { %>
+                                            <span class="skill-tag">
+                                                <i class="fa-solid fa-location-dot me-1"></i>
+                                                <%= skill.location %>
+                                            </span>
+                                        <% } %>
+
+                                    </div>
+
+                                    <div class="skill-card-actions">
+
+                                        <a
+                                            href="/skills/<%= skill.id %>/edit"
+                                            class="btn btn-sm btn-outline-primary"
+                                        >
+                                            <i class="fa-solid fa-pen me-1"></i>
+                                            Edit
+                                        </a>
+
+                                        <form
+                                            action="/skills/<%= skill.id %>/delete"
+                                            method="POST"
+                                            onsubmit="return confirm('Delete this skill?');"
+                                        >
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-outline-danger"
+                                            >
+                                                <i class="fa-solid fa-trash me-1"></i>
+                                                Delete
+                                            </button>
+
+                                        </form>
+
+                                    </div>
+
+                                </article>
+
+                            <% }) %>
+
+                        </div>
+
+                    <% } %>
+
+                </section>
+
+                <section class="profile-section">
+
+                    <div class="skill-section-heading">
+
+                        <div>
+
+                            <p class="section-label">
+                                Learning
+                            </p>
+
+                            <h2>
+                                Skills I Want to Learn
+                            </h2>
+
+                        </div>
+
+                        <a
+                            href="/skills/add"
+                            class="btn btn-sm btn-outline-primary"
+                        >
+                            <i class="fa-solid fa-plus me-1"></i>
+                            Add Learning Skill
+                        </a>
+
+                    </div>
+
+                    <% if (!learnSkills || learnSkills.length === 0) { %>
+
+                        <div class="empty-skills">
+
+                            <i class="fa-solid fa-book-open"></i>
+
+                            <h3>
+                                No learning skills yet
+                            </h3>
+
+                            <p>
+                                Add a skill that you would like another member to teach you.
+                            </p>
+
+                            <a
+                                href="/skills/add"
+                                class="btn btn-primary btn-sm"
+                            >
+                                Add a Learning Skill
+                            </a>
+
+                        </div>
+
+                    <% } else { %>
+
+                        <div class="skills-grid">
+
+                            <% learnSkills.forEach((skill) => { %>
+
+                                <article class="skill-profile-card">
+
+                                    <div class="skill-card-header">
+
+                                        <div>
+
+                                            <span class="skill-type-label learn-label">
+                                                Learn
+                                            </span>
+
+                                            <h3>
+                                                <%= skill.skill_name %>
+                                            </h3>
+
+                                        </div>
+
+                                        <i class="fa-solid fa-book-open skill-card-icon"></i>
+
+                                    </div>
+
+                                    <p>
+                                        <%= skill.description || 'No description added.' %>
+                                    </p>
+
+                                    <div class="skill-tags">
+
+                                        <% if (skill.category) { %>
+                                            <span class="skill-tag">
+                                                <%= skill.category %>
+                                            </span>
+                                        <% } %>
+
+                                        <% if (skill.skill_level) { %>
+                                            <span class="skill-tag">
+                                                <%= skill.skill_level %>
+                                            </span>
+                                        <% } %>
+
+                                        <% if (skill.availability) { %>
+                                            <span class="skill-tag">
+                                                <%= skill.availability %>
+                                            </span>
+                                        <% } %>
+
+                                        <% if (skill.location) { %>
+                                            <span class="skill-tag">
+                                                <i class="fa-solid fa-location-dot me-1"></i>
+                                                <%= skill.location %>
+                                            </span>
+                                        <% } %>
+
+                                    </div>
+
+                                    <div class="skill-card-actions">
+
+                                        <a
+                                            href="/skills/<%= skill.id %>/edit"
+                                            class="btn btn-sm btn-outline-primary"
+                                        >
+                                            <i class="fa-solid fa-pen me-1"></i>
+                                            Edit
+                                        </a>
+
+                                        <form
+                                            action="/skills/<%= skill.id %>/delete"
+                                            method="POST"
+                                            onsubmit="return confirm('Delete this skill?');"
+                                        >
+
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-outline-danger"
+                                            >
+                                                <i class="fa-solid fa-trash me-1"></i>
+                                                Delete
+                                            </button>
+
+                                        </form>
+
+                                    </div>
+
+                                </article>
+
+                            <% }) %>
+
+                        </div>
+
+                    <% } %>
+
+                </section>
+
+            </div>
+
+        </section>
 
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

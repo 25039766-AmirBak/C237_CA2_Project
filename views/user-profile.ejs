@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title><%= viewedUser.name %> | SkillSwap</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <link rel="stylesheet" href="/css/profile.css">
+    <link rel="stylesheet" href="/css/navbar.css">
+</head>
+
+<body class="profile-page">
+
+    <%- include('partials/navbar') %>
+
+    <main class="profile-wrapper">
+
+        <% if (isPreview) { %>
+            <div class="alert alert-info" role="alert">
+                <i class="fa-solid fa-eye me-2"></i>
+                This is how other members see your profile. Your email and
+                contact number are kept private.
+            </div>
+        <% } %>
+
+        <section class="profile-card">
+
+            <div class="profile-cover"></div>
+
+            <div class="profile-content">
+
+                <div class="profile-top">
+
+                    <div class="profile-identity">
+
+                        <div class="profile-avatar">
+                            <% if (viewedPicture) { %>
+                                <img
+                                    src="/images/<%= viewedPicture %>"
+                                    alt="<%= viewedUser.name %>'s profile picture"
+                                >
+                            <% } else { %>
+                                <%= String(viewedUser.name || 'U').charAt(0).toUpperCase() %>
+                            <% } %>
+                        </div>
+
+                        <div class="profile-name">
+
+                            <h1>
+                                <%= viewedUser.name %>
+                            </h1>
+
+                            <p>
+                                <i class="fa-solid fa-ranking-star me-1"></i>
+                                Level <%= viewedUser.level || 1 %>
+                                &middot;
+                                <%= viewedUser.points || 0 %> XP
+                                &middot;
+                                Member since
+                                <%= viewedUser.created_at
+                                    ? new Date(viewedUser.created_at).toLocaleDateString('en-SG', { month: 'long', year: 'numeric' })
+                                    : 'recently' %>
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="profile-actions">
+
+                        <a
+                            href="/matches"
+                            class="btn btn-primary"
+                        >
+                            <i class="fa-solid fa-people-arrows me-1"></i>
+                            Find a Match
+                        </a>
+
+                    </div>
+
+                </div>
+
+                <section class="profile-section">
+
+                    <h2>
+                        About Me
+                    </h2>
+
+                    <p>
+                        <%= viewedUser.bio || 'This member has not added a bio yet.' %>
+                    </p>
+
+                </section>
+
+                <section class="profile-section">
+
+                    <div class="skill-section-heading">
+
+                        <div>
+
+                            <p class="section-label">
+                                Teaching
+                            </p>
+
+                            <h2>
+                                Skills They Offer
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+                    <% if (!offerSkills || offerSkills.length === 0) { %>
+
+                        <div class="empty-skills">
+
+                            <i class="fa-solid fa-lightbulb"></i>
+
+                            <h3>
+                                No offered skills yet
+                            </h3>
+
+                            <p>
+                                This member has not added any skills to teach.
+                            </p>
+
+                        </div>
+
+                    <% } else { %>
+
+                        <div class="skills-grid">
+
+                            <% offerSkills.forEach((skill) => { %>
+
+                                <article class="skill-profile-card">
+
+                                    <div class="skill-card-header">
+
+                                        <div>
+
+                                            <span class="skill-type-label offer-label">
+                                                Offer
+                                            </span>
+
+                                            <h3>
+                                                <%= skill.skill_name %>
+                                            </h3>
+
+                                        </div>
+
+                                        <i class="fa-solid fa-chalkboard-user skill-card-icon"></i>
+
+                                    </div>
+
+                                    <p>
+                                        <%= skill.description || 'No description added.' %>
+                                    </p>
+
+                                    <div class="skill-tags">
+
+                                        <% if (skill.category) { %>
+                                            <span class="skill-tag">
+                                                <%= skill.category %>
+                                            </span>
+                                        <% } %>
+
+                                        <% if (skill.skill_level) { %>
+                                            <span class="skill-tag">
+                                                <%= skill.skill_level %>
+                                            </span>
+                                        <% } %>
+
+                                        <% if (skill.availability) { %>
+                                            <span class="skill-tag">
+                                                <%= skill.availability %>
+                                            </span>
+                                        <% } %>
+
+                                        <% if (skill.location) { %>
+                                            <span class="skill-tag">
+                                                <i class="fa-solid fa-location-dot me-1"></i>
+                                                <%= skill.location %>
+                                            </span>
+                                        <% } %>
+
+                                    </div>
+
+                                    <div class="skill-card-actions">
+
+                                        <a
+                                            href="/skills/<%= skill.id %>"
+                                            class="btn btn-sm btn-primary"
+                                        >
+                                            <i class="fa-solid fa-paper-plane me-1"></i>
+                                            Request This Skill
+                                        </a>
+
+                                    </div>
+
+                                </article>
+
+                            <% }) %>
+
+                        </div>
+
+                    <% } %>
+
+                </section>
+
+                <section class="profile-section">
+
+                    <div class="skill-section-heading">
+
+                        <div>
+
+                            <p class="section-label">
+                                Learning
+                            </p>
+
+                            <h2>
+                                Skills They Want to Learn
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+                    <% if (!learnSkills || learnSkills.length === 0) { %>
+
+                        <div class="empty-skills">
+
+                            <i class="fa-solid fa-book-open"></i>
+
+                            <h3>
+                                No learning skills yet
+                            </h3>
+
+                            <p>
+                                This member has not added any skills they want to learn.
+                            </p>
+
+                        </div>
+
+                    <% } else { %>
+
+                        <div class="skills-grid">
+
+                            <% learnSkills.forEach((skill) => { %>
+
+                                <article class="skill-profile-card">
+
+                                    <div class="skill-card-header">
+
+                                        <div>
+
+                                            <span class="skill-type-label learn-label">
+                                                Learn
+                                            </span>
+
+                                            <h3>
+                                                <%= skill.skill_name %>
+                                            </h3>
+
+                                        </div>
+
+                                        <i class="fa-solid fa-book-open skill-card-icon"></i>
+
+                                    </div>
+
+                                    <p>
+                                        <%= skill.description || 'No description added.' %>
+                                    </p>
+
+                                    <div class="skill-tags">
+
+                                        <% if (skill.category) { %>
+                                            <span class="skill-tag">
+                                                <%= skill.category %>
+                                            </span>
+                                        <% } %>
+
+                                        <% if (skill.skill_level) { %>
+                                            <span class="skill-tag">
+                                                <%= skill.skill_level %>
+                                            </span>
+                                        <% } %>
+
+                                        <% if (skill.availability) { %>
+                                            <span class="skill-tag">
+                                                <%= skill.availability %>
+                                            </span>
+                                        <% } %>
+
+                                        <% if (skill.location) { %>
+                                            <span class="skill-tag">
+                                                <i class="fa-solid fa-location-dot me-1"></i>
+                                                <%= skill.location %>
+                                            </span>
+                                        <% } %>
+
+                                    </div>
+
+                                </article>
+
+                            <% }) %>
+
+                        </div>
+
+                    <% } %>
+
+                </section>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
