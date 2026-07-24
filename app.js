@@ -2252,7 +2252,8 @@ app.post(
 /********************************************************************
                     Member 4: GAMIFICATION
 ********************************************************************/
-//Award XP to user and triggers level up check
+// awardXP adds points to the user's total, the checks for a level up.
+// COALESCE handles users who have NULL points (new users).
 function awardXP(userId, amount) {
     connection.query(
         'UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?',
@@ -2267,7 +2268,10 @@ function awardXP(userId, amount) {
     );
 }
 
-//Level Up check: triggers if have enough XP
+// checkLevelUp reads the user's current points and level.
+// Each level requires (level * 100) total XP to advance. (For example, reaching level 2 requires 200 total XP.)
+// The user's XP total is NOT reset on level up — it keeps accumulating toward the next level.
+// Note: accumulating enough XP to skip multiple levels is not handled.
 function checkLevelUp(userId) {
     connection.query(
         'SELECT points, level FROM users WHERE id = ?',
@@ -2289,9 +2293,11 @@ function checkLevelUp(userId) {
     );
 }
 
-//Check if badge already earned, then insert if not
+// awardBadge grants a single badge to a user if they do not already have it. Uses a two-step lookup
+// Step 1: resolve badge_name → badge_id from the badges table.
+// Step 2: check user_badges for an existing row; insert if absent.
+// This prevents duplicate badge entries.
 function awardBadge(userId, badgeName) {
-    // First look up the badge_id from the badges table
     connection.query(
         'SELECT badge_id FROM badges WHERE badge_name = ?',
         [badgeName],
@@ -2301,7 +2307,8 @@ function awardBadge(userId, badgeName) {
                 return;
             }
             const badgeId = badgeRows[0].badge_id;
-            // Then check if this badge is already earned
+            // Check if this badge is already earned by the user.
+            // If it is, skip the insert to avoid duplicates.
             connection.query(
                 'SELECT user_badge_id FROM user_badges WHERE user_id = ? AND badge_id = ?',
                 [userId, badgeId],
@@ -2311,7 +2318,7 @@ function awardBadge(userId, badgeName) {
                         return;
                     }
                     if (rows.length > 0) return;
-                    // Insert using the foreign key badge_id
+                    // Insert the badge using the foreign key badge_id
                     connection.query(
                         'INSERT INTO user_badges (user_id, badge_id) VALUES (?, ?)',
                         [userId, badgeId]
@@ -2322,7 +2329,9 @@ function awardBadge(userId, badgeName) {
     );
 }
 
-//Checks exchange history & completion, awarding badges to both learner & teacher if completed
+// checkAndAwardBadges counts completed sessions and awards badges based on milestone thresholds.
+// First query: total sessions where the user participated (as either learner or teacher). Awards badges at 1, 5, 10, 20.
+// Second query: sessions where the user was the teacher. Awards the 'Top Teacher' badge at 5 sessions taught.
 function checkAndAwardBadges(userId) {
     connection.query(
         'SELECT COUNT(*) AS total FROM sessions WHERE (learner_id = ? OR teacher_id = ?) AND status = "completed"',
@@ -2351,10 +2360,18 @@ function checkAndAwardBadges(userId) {
 // GET /badges - Display badges and progress page
 // ===============================================
 
-//Protected route, queries user XP, level, exchange stuff & earned badges before routing to badges.ejs
+// Protected route that gathers all data needed by badges.ejs:
+// 1. User's current XP and level (from users table)
+// 2. XP required for the next level (level * 100)
+// 3. Total completed exchanges (sessions where user is learner or teacher)
+// 4. Completed exchanges where user was the teacher
+// 5. Set of badge names the user has already earned (via JOIN query)
+
+// All is passed to badges.ejs which renders the progress bar, stats card, and badge cards (earned vs locked).
 app.get('/badges', checkAuthenticated, (req, res) => {
     const userId = req.session.user.id;
 
+    // Step 1: Get user's current points and level
     connection.query('SELECT points, level FROM users WHERE id = ?', [userId], (err, userRows) => {
         if (err || userRows.length === 0) {
             req.flash('error', 'User not found');
@@ -2370,18 +2387,22 @@ app.get('/badges', checkAuthenticated, (req, res) => {
         const level = userRows[0].level || 1;
         const xpForNextLevel = level * 100;
 
+        // Step 2: Count total completed exchanges (as learner or teacher)
         connection.query(
             'SELECT COUNT(*) AS total FROM sessions WHERE (learner_id = ? OR teacher_id = ?) AND status = "completed"',
             [userId, userId],
             (err, exchangeRows) => {
                 const totalExchanges = exchangeRows ? exchangeRows[0].total : 0;
 
+                // Step 3: Count completed exchanges as teacher
                 connection.query(
                     'SELECT COUNT(*) AS count FROM sessions WHERE teacher_id = ? AND status = "completed"',
                     [userId],
                     (err, teacherRows) => {
                         const teacherExchanges = teacherRows ? teacherRows[0].count : 0;
 
+                        // Step 4: Get list of badge names the user has earned
+                        // Joins user_badges with badges to resolve badge_id → badge_name
                         connection.query(
                             'SELECT badges.badge_name FROM user_badges INNER JOIN badges ON badges.badge_id = user_badges.badge_id WHERE user_badges.user_id = ?',
                             [userId],
@@ -2967,8 +2988,7 @@ app.post(
     }
 );
 
-// POST /schedule/:id/complete - only the teacher can mark a Confirmed
-// session as Completed, which triggers gamification rewards
+// POST /schedule/:id/complete - only the teacher can mark a Confirmed session as Completed, which triggers gamification rewards
 app.post(
     '/schedule/:id/complete',
     checkAuthenticated,
