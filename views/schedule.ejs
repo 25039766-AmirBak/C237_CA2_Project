@@ -92,7 +92,6 @@
                         <button type="submit" class="btn btn-success btn-sm">Complete</button>
                     </form>
                 <% } %>
-                    //Validation to ensure that prevents cancellation of sessions that are already cancelled, completed or rejected.
                 <% if (
                     !['cancelled', 'completed', 'rejected'].includes(String(session.status).toLowerCase())
                 ) { %>
@@ -131,7 +130,7 @@
 
                 <div class="col-md-2">
                     <label for="session_time" class="form-label">Time </label>
-                    <input type="time"id="session_time"name="session_time" class="form-control" required>
+                    <input type="time" id="session_time" name="session_time" class="form-control" required>
                 </div>
 
                 <div class="col-md-2 d-flex align-items-end">
